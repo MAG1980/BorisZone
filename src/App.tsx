@@ -8,7 +8,6 @@ function App() {
   const [count, setCount] = useState(0)
   const resSet = new Set(psList.map((ps) => ps.resName))
   const resList = Array.from(resSet)
-  console.log({ psList })
 
   return (
     <>
