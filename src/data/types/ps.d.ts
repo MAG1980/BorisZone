@@ -1,5 +1,5 @@
 export type Ps = {
-  [key: string]: string
-  psName: string
+  id: number
+  name: string
   resName: string
-}
+} & { [key: string]: string | number }
