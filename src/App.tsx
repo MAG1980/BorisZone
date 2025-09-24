@@ -3,12 +3,22 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { psDb } from './data/psDb.ts'
-import { closestCorners, DndContext, type DragEndEvent } from '@dnd-kit/core'
+import {
+  closestCorners,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
 import { PsItem } from './components/PsItem.tsx'
 import {
   arrayMove,
   horizontalListSortingStrategy,
   SortableContext,
+  sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 
 function App() {
@@ -44,10 +54,22 @@ function App() {
     })
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
   return (
     <>
       <h1 className="text-3xl font-bold text-blue-600">Hello Tailwind!</h1>
-      <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <DndContext
+        collisionDetection={closestCorners}
+        onDragEnd={handleDragEnd}
+        sensors={sensors}
+      >
         <div className="grid grid-cols-12 py-3 gap-3">
           <div className="col-span-7 flex flex-col justify-around text-white gap-2">
             {resList.map((resName) => (
