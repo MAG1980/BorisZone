@@ -3,56 +3,83 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { psDb } from './data/psDb.ts'
+import { resList } from './data/resList.ts'
 import {
-  closestCorners,
   DndContext,
   type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  rectIntersection,
   TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
 import { PsItem } from './components/PsItem.tsx'
-import {
-  arrayMove,
-  horizontalListSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-} from '@dnd-kit/sortable'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { Droppable } from './components/Droppable.tsx'
+import type { Ps } from './data/types/ps'
 
 function App() {
   const [count, setCount] = useState(0)
-  const resSet = new Set(psDb.map((ps) => ps.resName))
-  const resList = Array.from(resSet)
+  const [psList, setPsList] = useState<Record<string, Ps[]>>({
+    all: psDb,
+  })
 
-  const [psList, setPsList] = useState(psDb)
+  const handleDragEnd = (e: DragEndEvent) => {
+    // active - перетаскиваемый элемент.
+    // over - контейнер, на который перетаскивается активный элемент.
+    const { active, over } = e
+
+    console.log({ over, active })
+
+    if (!over) return
+    const activeElementId = Number(active.id)
+    const activeContainerId = findContainer(activeElementId)
+    if (!activeContainerId) return
+    const activeElementPosition = getPsPosition(
+      activeElementId,
+      activeContainerId
+    )
+
+    const overContainerId = over.id.toString()
+
+    if (activeContainerId === overContainerId) return
+
+    // Добавляем перетаскиваемый элемент в новый контейнер.
+    setPsList((prevPsList) => ({
+      ...prevPsList,
+      [overContainerId]: !prevPsList[overContainerId]
+        ? [psList[activeContainerId][activeElementPosition]]
+        : [
+            ...prevPsList[overContainerId],
+            psList[activeContainerId][activeElementPosition],
+          ],
+    }))
+
+    const filteredPsList = psList[activeContainerId].filter(
+      (ps) => ps.id !== active.id
+    )
+    console.log({ filteredPsList })
+    // Удаляем перетаскиваемый элемент из списка подстанций.
+    setPsList((psList) => ({
+      ...psList,
+      [activeContainerId]: [...filteredPsList],
+    }))
+  }
+
+  const findContainer = (id: number) => {
+    return Object.keys(psList).find((key) =>
+      psList[key].map((item) => item.id).includes(id)
+    )
+  }
 
   /**
    * Получение индекса элемента массива по его id
    * @param id number
+   * @param containerId string
    */
-  const getPsPosition = (id: string | number) =>
-    psList.findIndex((ps) => ps.id === id)
-
-  const handleDragEnd = (e: DragEndEvent) => {
-    // active - перетаскиваемый элемент.
-    // over - элемент, который будет заменён при отпускании активного элемента.
-    const { active, over } = e
-
-    // Если позиция перетаскиваемого элемента не изменяется, то ничего не делаем.
-    if (!over || active.id === over?.id) return
-
-    setPsList((psList) => {
-      // Исходный индекс перетаскиваемого (активного) элемента в массиве.
-      const originalPosition = getPsPosition(active.id)
-      // Индекс элемента в массиве, на место которого перетаскивается активный элемент.
-      const newPosition = getPsPosition(over.id)
-
-      // Используем библиотечную функцию @dnd-kit для изменения положения элемента массива.
-      return arrayMove(psList, originalPosition, newPosition)
-    })
-  }
+  const getPsPosition = (id: string | number, containerId: string) =>
+    psList[containerId].findIndex((ps) => ps.id === id)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -66,35 +93,39 @@ function App() {
     <>
       <h1 className="text-3xl font-bold text-blue-600">Hello Tailwind!</h1>
       <DndContext
-        collisionDetection={closestCorners}
+        collisionDetection={rectIntersection}
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
         <div className="grid grid-cols-12 py-3 gap-3">
           <div className="col-span-7 flex flex-col justify-around text-white gap-2">
-            {resList.map((resName) => (
+            {resList.map((res) => (
               <div
                 className="grid grid-cols-12 h-full bg-blue-500 rounded-lg p-3 gap-2"
-                key={resName}
+                key={res.name}
               >
-                <div className="col-span-3 flex justify-center items-center">
-                  {resName}
+                <div className="flex justify-center items-center rotate-270">
+                  {res.name}
                 </div>
-                <div className="col-span-9 h-full flex bg-white rounded-lg"></div>
+                <Droppable id={res.name} className={'col-span-11'}>
+                  <div className="w-full h-full flex bg-white rounded-lg">
+                    {psList[res.name] &&
+                      psList[res.name].map((ps) => (
+                        <PsItem key={ps.id} ps={ps} />
+                      ))}
+                  </div>
+                </Droppable>
               </div>
             ))}
           </div>
 
-          <div className="col-span-5 grid grid-cols-3 gap-2">
-            <SortableContext
-              items={psList}
-              strategy={horizontalListSortingStrategy}
-            >
-              {psList.map((ps) => (
+          <Droppable id={'all'} className={'col-span-5'}>
+            <div className=" grid grid-cols-3 gap-2">
+              {psList.all.map((ps) => (
                 <PsItem key={ps.id} ps={ps} />
               ))}
-            </SortableContext>
-          </div>
+            </div>
+          </Droppable>
         </div>
       </DndContext>
       <div>

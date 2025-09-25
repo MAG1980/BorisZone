@@ -1,13 +1,13 @@
 import type { Ps } from '../data/types/ps'
-import { useSortable } from '@dnd-kit/sortable'
+import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
 export const PsItem = ({ ps }: { ps: Ps }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: ps.id })
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: ps.id,
+  })
 
   const style = {
-    transition,
     transform: CSS.Transform.toString(transform),
   }
 
