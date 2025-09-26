@@ -17,7 +17,7 @@ export const PsItem = ({ ps }: { ps: Ps }) => {
       {...attributes}
       {...listeners}
       style={style}
-      className="flex justify-center items-center bg-cyan-300 text-blue-800 text-pretty p-1 rounded-md"
+      className="flex justify-center items-center bg-cyan-300 text-blue-800 text-pretty p-1 rounded-md  min-h-[80px]"
     >
       {ps.name}
     </div>
