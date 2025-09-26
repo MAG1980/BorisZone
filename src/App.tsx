@@ -146,7 +146,13 @@ function App() {
                   <div className="grid grid-cols-4 w-full gap-1  rounded-lg  ">
                     {psList[res.name] &&
                       psList[res.name].map((ps) => (
-                        <PsItem key={ps.id} ps={ps} />
+                        <PsItem
+                          key={ps.id}
+                          ps={ps}
+                          variant={
+                            ps.resName === res.name ? 'success' : 'danger'
+                          }
+                        />
                       ))}
                   </div>
                 </Droppable>
