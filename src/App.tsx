@@ -7,6 +7,8 @@ import { resList } from './data/resList.ts'
 import {
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   rectIntersection,
@@ -24,6 +26,22 @@ function App() {
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
     all: psDb,
   })
+  const [activeElementId, setActiveElementId] = useState<number | null>(null)
+  const [activeContainerId, setActiveContainerId] = useState<string | null>(
+    null
+  )
+  const [activePs, setActivePs] = useState<Ps | null>(null)
+
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    const elementId = Number(active.id)
+    setActiveElementId(elementId)
+    const containerId = findContainer(elementId)
+    if (!containerId) return
+    setActiveContainerId(containerId)
+    const ps = psList[containerId].find((ps) => ps.id === elementId)
+    if (!ps) return
+    setActivePs(ps)
+  }
 
   const handleDragEnd = (e: DragEndEvent) => {
     // active - перетаскиваемый элемент.
@@ -33,9 +51,8 @@ function App() {
     console.log({ over, active })
 
     if (!over) return
-    const activeElementId = Number(active.id)
-    const activeContainerId = findContainer(activeElementId)
-    if (!activeContainerId) return
+
+    if (!activeContainerId || !activeElementId) return
     const activeElementPosition = getPsPosition(
       activeElementId,
       activeContainerId
@@ -43,7 +60,12 @@ function App() {
 
     const overContainerId = over.id.toString()
 
-    if (activeContainerId === overContainerId) return
+    if (activeContainerId === overContainerId) {
+      setActiveElementId(null)
+      setActiveContainerId(null)
+      setActivePs(null)
+      return
+    }
 
     // Добавляем перетаскиваемый элемент в новый контейнер.
     setPsList((prevPsList) => ({
@@ -59,12 +81,15 @@ function App() {
     const filteredPsList = psList[activeContainerId].filter(
       (ps) => ps.id !== active.id
     )
-    console.log({ filteredPsList })
     // Удаляем перетаскиваемый элемент из списка подстанций.
     setPsList((psList) => ({
       ...psList,
       [activeContainerId]: [...filteredPsList],
     }))
+
+    setActiveElementId(null)
+    setActiveContainerId(null)
+    setActivePs(null)
   }
 
   const findContainer = (id: number) => {
@@ -94,10 +119,15 @@ function App() {
       <h1 className="text-3xl font-bold text-blue-600">Hello Tailwind!</h1>
       <DndContext
         collisionDetection={rectIntersection}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
         <div className="grid grid-cols-12 py-3 gap-3">
+          <DragOverlay>
+            {/*Компонент, который отображается в процессе перемещения.*/}
+            {activePs ? <PsItem ps={activePs} /> : null}
+          </DragOverlay>
           <div className="col-span-7 grid justify-around text-white gap-2">
             {resList.map((res) => (
               <div

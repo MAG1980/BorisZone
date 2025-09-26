@@ -1,6 +1,5 @@
 import type { Ps } from '../data/types/ps'
 import { useDraggable } from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
 
 export const PsItem = ({ ps }: { ps: Ps }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -8,7 +7,9 @@ export const PsItem = ({ ps }: { ps: Ps }) => {
   })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
   }
 
   return (
