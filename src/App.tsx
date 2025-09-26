@@ -20,6 +20,11 @@ import { PsItem } from './components/PsItem.tsx'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { Droppable } from './components/Droppable.tsx'
 import type { Ps } from './data/types/ps'
+import { clsx } from 'clsx'
+
+interface Answers {
+  [key: string]: Ps[]
+}
 
 function App() {
   const [count, setCount] = useState(0)
@@ -31,6 +36,16 @@ function App() {
     null
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
+
+  const answers: Answers = {}
+  psDb.forEach((ps) => {
+    if (!answers[ps.resName]) {
+      answers[ps.resName] = []
+    }
+    answers[ps.resName].push(ps)
+  })
+
+  console.log({ answers })
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     const elementId = Number(active.id)
@@ -129,35 +144,51 @@ function App() {
             {activePs ? <PsItem ps={activePs} /> : null}
           </DragOverlay>
           <div className="col-span-7 grid justify-around text-white gap-2">
-            {resList.map((res) => (
-              <div
-                className="grid grid-cols-12   bg-blue-500 rounded-lg p-3 gap-2"
-                key={res.name}
-              >
-                <div className="flex justify-center items-center rotate-270 px-2 py-3 ">
-                  {res.name}
-                </div>
-                <Droppable
-                  id={res.name}
-                  className={
-                    'col-span-11 p-1 rounded-lg bg-white min-h-[256px]'
-                  }
+            {resList.map((res) => {
+              let matches = false
+              const currentPsSet = psList[res.name]
+              const currentResAnswers = answers[res.name]
+              if (currentPsSet) {
+                matches =
+                  !!currentPsSet.length &&
+                  currentPsSet.length === currentResAnswers.length &&
+                  currentPsSet.every((ps) => currentResAnswers.includes(ps))
+                console.log({ matches })
+              }
+              console.log({ ps: psList[res.name] })
+              return (
+                <div
+                  className={clsx(
+                    'grid grid-cols-12 bg-blue-500 rounded-lg p-3 gap-2',
+                    matches && 'bg-teal-500'
+                  )}
+                  key={res.name}
                 >
-                  <div className="grid grid-cols-4 w-full gap-1  rounded-lg  ">
-                    {psList[res.name] &&
-                      psList[res.name].map((ps) => (
-                        <PsItem
-                          key={ps.id}
-                          ps={ps}
-                          variant={
-                            ps.resName === res.name ? 'success' : 'danger'
-                          }
-                        />
-                      ))}
+                  <div className="flex justify-center items-center rotate-270 px-2 py-3 ">
+                    {res.name}
                   </div>
-                </Droppable>
-              </div>
-            ))}
+                  <Droppable
+                    id={res.name}
+                    className={
+                      'col-span-11 p-1 rounded-lg bg-white min-h-[256px]'
+                    }
+                  >
+                    <div className="grid grid-cols-4 w-full gap-1  rounded-lg  ">
+                      {psList[res.name] &&
+                        psList[res.name].map((ps) => (
+                          <PsItem
+                            key={ps.id}
+                            ps={ps}
+                            variant={
+                              ps.resName === res.name ? 'success' : 'danger'
+                            }
+                          />
+                        ))}
+                    </div>
+                  </Droppable>
+                </div>
+              )
+            })}
           </div>
 
           <Droppable id={'all'} className={'col-span-5'}>
