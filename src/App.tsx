@@ -173,7 +173,7 @@ function App() {
                       'col-span-11 p-1 rounded-lg bg-white min-h-[256px]'
                     }
                   >
-                    <div className="grid grid-cols-4 w-full gap-1  rounded-lg  ">
+                    <div className="grid grid-cols-4 gap-1  rounded-lg  ">
                       {psList[res.name] &&
                         psList[res.name].map((ps) => (
                           <PsItem
@@ -191,7 +191,10 @@ function App() {
             })}
           </div>
 
-          <Droppable id={'all'} className={'col-span-5'}>
+          <Droppable
+            id={'all'}
+            className={'col-span-5 p-4 bg-blue-800 rounded-lg'}
+          >
             <div className=" grid grid-cols-3 gap-2">
               {psList.all.map((ps) => (
                 <PsItem key={ps.id} ps={ps} />
