@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import { psDb } from './data/psDb.ts'
 import { resList } from './data/resList.ts'
@@ -27,7 +25,6 @@ interface Answers {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
     all: psDb,
   })
@@ -121,6 +118,15 @@ function App() {
   const getPsPosition = (id: string | number, containerId: string) =>
     psList[containerId].findIndex((ps) => ps.id === id)
 
+  const shuffleArraySimple = (array: Ps[]) =>
+    array.slice().sort(() => Math.random() - 0.5)
+
+  const shufflePsSimple = (psDb: Ps[]) => {
+    setPsList({
+      all: shuffleArraySimple(psDb),
+    })
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
@@ -131,7 +137,26 @@ function App() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-blue-600">Hello Tailwind!</h1>
+      <div className="flex justify-around">
+        <button
+          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+          onClick={() => shufflePsSimple(psDb)}
+        >
+          Перемешать
+        </button>
+        <button
+          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+          onClick={() => setPsList({ all: psDb })}
+        >
+          Расставить по порядку
+        </button>
+        <button
+          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+          onClick={() => setPsList({ ...answers, all: [] })}
+        >
+          Заполнить правильными ответами
+        </button>
+      </div>
       <DndContext
         collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
@@ -203,26 +228,6 @@ function App() {
           </Droppable>
         </div>
       </DndContext>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
