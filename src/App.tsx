@@ -137,7 +137,7 @@ function App() {
 
   return (
     <>
-      <div className="flex justify-around">
+      <div className="flex gap-2">
         <button
           className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
           onClick={() => shufflePsSimple(psDb)}
@@ -163,12 +163,12 @@ function App() {
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
-        <div className="grid grid-cols-12 py-3 gap-3">
+        <div className="grid grid-cols-12 grid-rows-15 py-3 gap-3 h-[95vh]">
           <DragOverlay>
             {/*Компонент, который отображается в процессе перемещения.*/}
             {activePs ? <PsItem ps={activePs} /> : null}
           </DragOverlay>
-          <div className="col-span-7 grid justify-around text-white gap-2">
+          <div className="col-span-12 row-span-6 grid-cols-subgrid grid justify-around text-white gap-2">
             {resList.map((res) => {
               let matches = false
               const currentPsSet = psList[res.name]
@@ -184,19 +184,17 @@ function App() {
               return (
                 <div
                   className={clsx(
-                    'grid grid-cols-12 bg-blue-500 rounded-lg p-3 gap-2',
+                    'col-span-3 flex flex-col bg-blue-500 rounded-lg p-3 gap-2',
                     matches && 'bg-teal-500'
                   )}
                   key={res.name}
                 >
-                  <div className="flex justify-center items-center rotate-270 px-2 py-3 ">
+                  <div className="flex justify-center items-center px-2 py-3 ">
                     {res.name}
                   </div>
                   <Droppable
                     id={res.name}
-                    className={
-                      'col-span-11 p-1 rounded-lg bg-white min-h-[256px]'
-                    }
+                    className={'grow p-1 rounded-lg bg-white'}
                   >
                     <div className="grid grid-cols-4 gap-1  rounded-lg  ">
                       {psList[res.name] &&
@@ -218,9 +216,11 @@ function App() {
 
           <Droppable
             id={'all'}
-            className={'col-span-5 p-4 bg-blue-800 rounded-lg'}
+            className={
+              'col-span-12 row-start-10 row-span-6 grid-cols-subgrid p-4 bg-blue-800 rounded-lg'
+            }
           >
-            <div className=" grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-16 gap-2">
               {psList.all.map((ps) => (
                 <PsItem key={ps.id} ps={ps} />
               ))}
