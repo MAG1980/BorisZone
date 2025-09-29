@@ -136,8 +136,8 @@ function App() {
   )
 
   return (
-    <>
-      <div className="flex gap-2">
+    <div className="py-3">
+      <div className="flex items-center  h-[7vh]  gap-2">
         <button
           className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
           onClick={() => shufflePsSimple(psDb)}
@@ -163,12 +163,12 @@ function App() {
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
-        <div className="grid grid-cols-12 grid-rows-15 py-3 gap-3 h-[95vh]">
+        <div className="grid content-between grid-cols-12 auto-rows-max gap-3 h-[90vh]">
           <DragOverlay>
             {/*Компонент, который отображается в процессе перемещения.*/}
             {activePs ? <PsItem ps={activePs} /> : null}
           </DragOverlay>
-          <div className="col-span-12 row-span-6 grid-cols-subgrid grid justify-around text-white gap-2">
+          <div className="col-span-12 auto-rows-[minmax(232px,auto)] grid-cols-subgrid grid justify-around text-white gap-2">
             {resList.map((res) => {
               let matches = false
               const currentPsSet = psList[res.name]
@@ -217,7 +217,7 @@ function App() {
           <Droppable
             id={'all'}
             className={
-              'col-span-12 row-start-10 row-span-6 grid-cols-subgrid p-4 bg-blue-800 rounded-lg'
+              'col-span-12 grid-cols-subgrid p-4 bg-blue-800 rounded-lg'
             }
           >
             <div className="grid grid-cols-16 gap-2">
@@ -228,7 +228,7 @@ function App() {
           </Droppable>
         </div>
       </DndContext>
-    </>
+    </div>
   )
 }
 

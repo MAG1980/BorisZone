@@ -20,13 +20,13 @@ export const PsItem = ({ ps, className, variant = 'default' }: Props) => {
   }
 
   const baseStyles =
-    'flex justify-center items-center text-blue-800 text-pretty p-1 rounded-md max-w-[150px] min-h-[80px]'
+    'flex justify-center items-center text-blue-800 text-pretty p-1 rounded-md max-w-[150px] min-h-[70px]'
   const variants = {
     default: 'bg-cyan-300',
     danger: 'bg-red-500 text-white',
     success: 'bg-teal-500 text-white',
   }
-  const classes = clsx(baseStyles, variants[variant], className)
+  const classes = clsx('text-sm', baseStyles, variants[variant], className)
 
   return (
     <div
