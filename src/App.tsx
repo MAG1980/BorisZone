@@ -272,10 +272,10 @@ function App() {
           <Droppable
             id={'all'}
             className={
-              'col-span-12 grid-cols-subgrid p-4 bg-blue-800 rounded-lg'
+              'col-span-12 grid-cols-subgrid p-2 bg-blue-800 rounded-lg'
             }
           >
-            <div className="grid grid-cols-16 gap-2">
+            <div className="grid grid-cols-16 gap-1">
               {psList.all.map((ps) => (
                 <PsItem key={ps.id} ps={ps} active={ps.id === activePs?.id} />
               ))}
