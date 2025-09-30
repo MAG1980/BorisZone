@@ -14,11 +14,17 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip.tsx'
 import { PsItem } from './components/PsItem.tsx'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { Droppable } from './components/Droppable.tsx'
 import type { Ps } from './data/types/ps'
 import { clsx } from 'clsx'
+import { TooltipArrow } from '@radix-ui/react-tooltip'
 
 interface Answers {
   [key: string]: Ps[]
@@ -33,6 +39,7 @@ function App() {
     null
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
+  const [errorCount, setErrorCount] = useState<number | null>(null)
 
   const answers: Answers = {}
   psDb.forEach((ps) => {
@@ -41,8 +48,6 @@ function App() {
     }
     answers[ps.resName].push(ps)
   })
-
-  console.log({ answers })
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     const elementId = Number(active.id)
@@ -60,8 +65,6 @@ function App() {
     // over - контейнер, на который перетаскивается активный элемент.
     const { active, over } = e
 
-    console.log({ over, active })
-
     if (!over) return
 
     if (!activeContainerId || !activeElementId) return
@@ -75,8 +78,15 @@ function App() {
     if (activeContainerId === overContainerId) {
       setActiveElementId(null)
       setActiveContainerId(null)
-      setActivePs(null)
+
       return
+    }
+
+    if (
+      psList[activeContainerId][activeElementPosition].resName !==
+      overContainerId
+    ) {
+      setErrorCount((prevState) => (prevState ? prevState + 1 : 1))
     }
 
     // Добавляем перетаскиваемый элемент в новый контейнер.
@@ -90,10 +100,11 @@ function App() {
           ],
     }))
 
+    // Удаляем перетаскиваемый элемент из контейнера, в котором он находился до перетаскивания.
     const filteredPsList = psList[activeContainerId].filter(
       (ps) => ps.id !== active.id
     )
-    // Удаляем перетаскиваемый элемент из списка подстанций.
+
     setPsList((psList) => ({
       ...psList,
       [activeContainerId]: [...filteredPsList],
@@ -137,25 +148,70 @@ function App() {
 
   return (
     <div className="py-3">
-      <div className="flex items-center  h-[7vh]  gap-2">
-        <button
-          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-          onClick={() => shufflePsSimple(psDb)}
-        >
-          Перемешать
-        </button>
-        <button
-          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-          onClick={() => setPsList({ all: psDb })}
-        >
-          Расставить по порядку
-        </button>
-        <button
-          className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-          onClick={() => setPsList({ ...answers, all: [] })}
-        >
-          Заполнить правильными ответами
-        </button>
+      <div className="flex justify-between items-center h-[7vh]">
+        <div className="flex gap-52">
+          <div className="flex gap-2">
+            <button
+              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+              onClick={() => {
+                shufflePsSimple(psDb)
+                setErrorCount(null)
+              }}
+            >
+              Перемешать
+            </button>
+            <button
+              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+              onClick={() => {
+                setPsList({ all: psDb })
+                setErrorCount(null)
+              }}
+            >
+              Расставить по порядку
+            </button>
+            <button
+              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+              onClick={() => {
+                setPsList({ ...answers, all: [] })
+                setErrorCount(null)
+              }}
+            >
+              Заполнить правильными ответами
+            </button>
+          </div>
+          {!!errorCount && (
+            <div className="flex items-center gap-2">
+              <div className="text-white font-bold">
+                Количество ошибок
+                <span className="ml-2 bg-white text-red-500  rounded-full py-4 px-6">
+                  {errorCount}
+                </span>
+              </div>
+              <button
+                className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+                onClick={() => setErrorCount(0)}
+              >
+                Сбросить счётчик ошибок
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          {activePs && (
+            <>
+              <Tooltip>
+                <TooltipTrigger className="fill-blue-600 text-3xl font-bold text-white bg-teal-600 px-4 py-3">
+                  Подсказка для {activePs.name}
+                </TooltipTrigger>
+                <TooltipContent className="text-xl text-white bg-blue-600 fill-blue-600 px-4 py-3">
+                  <p>{activePs.resName}</p>
+                  <TooltipArrow className="fill-blue-600" />
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
+        </div>
       </div>
       <DndContext
         collisionDetection={rectIntersection}
@@ -178,9 +234,7 @@ function App() {
                   !!currentPsSet.length &&
                   currentPsSet.length === currentResAnswers.length &&
                   currentPsSet.every((ps) => currentResAnswers.includes(ps))
-                console.log({ matches })
               }
-              console.log({ ps: psList[res.name] })
               return (
                 <div
                   className={clsx(
@@ -205,6 +259,7 @@ function App() {
                             variant={
                               ps.resName === res.name ? 'success' : 'danger'
                             }
+                            active={ps.id === activePs?.id}
                           />
                         ))}
                     </div>
@@ -222,7 +277,7 @@ function App() {
           >
             <div className="grid grid-cols-16 gap-2">
               {psList.all.map((ps) => (
-                <PsItem key={ps.id} ps={ps} />
+                <PsItem key={ps.id} ps={ps} active={ps.id === activePs?.id} />
               ))}
             </div>
           </Droppable>
