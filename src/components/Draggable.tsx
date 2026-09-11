@@ -8,7 +8,7 @@ export const Draggable = ({ children }: PropsWithChildren) => {
 
   const style = transform
     ? {
-        transform: `translate3D(${transform.x}ps, ${transform.y}px,0)`,
+        transform: `translate3D(${transform.x}px, ${transform.y}px, 0)`,
       }
     : undefined
   return (

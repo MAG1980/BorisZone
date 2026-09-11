@@ -30,6 +30,14 @@ interface Answers {
   [key: string]: Ps[]
 }
 
+const answers: Answers = {}
+psDb.forEach((ps) => {
+  if (!answers[ps.resName]) {
+    answers[ps.resName] = []
+  }
+  answers[ps.resName].push(ps)
+})
+
 function App() {
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
     all: psDb,
@@ -40,14 +48,6 @@ function App() {
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
-
-  const answers: Answers = {}
-  psDb.forEach((ps) => {
-    if (!answers[ps.resName]) {
-      answers[ps.resName] = []
-    }
-    answers[ps.resName].push(ps)
-  })
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     const elementId = Number(active.id)
@@ -82,32 +82,19 @@ function App() {
       return
     }
 
-    if (
-      psList[activeContainerId][activeElementPosition].resName !==
-      overContainerId
-    ) {
+    const movedPs = psList[activeContainerId][activeElementPosition]
+
+    if (movedPs.resName !== overContainerId) {
       setErrorCount((prevState) => (prevState ? prevState + 1 : 1))
     }
 
-    // Добавляем перетаскиваемый элемент в новый контейнер.
+    // Перемещаем элемент: добавляем в новый контейнер и удаляем из старого за один апдейт.
     setPsList((prevPsList) => ({
       ...prevPsList,
-      [overContainerId]: !prevPsList[overContainerId]
-        ? [psList[activeContainerId][activeElementPosition]]
-        : [
-            ...prevPsList[overContainerId],
-            psList[activeContainerId][activeElementPosition],
-          ],
-    }))
-
-    // Удаляем перетаскиваемый элемент из контейнера, в котором он находился до перетаскивания.
-    const filteredPsList = psList[activeContainerId].filter(
-      (ps) => ps.id !== active.id
-    )
-
-    setPsList((psList) => ({
-      ...psList,
-      [activeContainerId]: [...filteredPsList],
+      [overContainerId]: [...(prevPsList[overContainerId] ?? []), movedPs],
+      [activeContainerId]: prevPsList[activeContainerId].filter(
+        (ps) => ps.id !== active.id
+      ),
     }))
 
     setActiveElementId(null)
@@ -126,7 +113,7 @@ function App() {
    * @param id number
    * @param containerId string
    */
-  const getPsPosition = (id: string | number, containerId: string) =>
+  const getPsPosition = (id: number, containerId: string) =>
     psList[containerId].findIndex((ps) => ps.id === id)
 
   const shuffleArraySimple = (array: Ps[]) =>
