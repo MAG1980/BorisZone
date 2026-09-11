@@ -25,6 +25,8 @@ import type { Ps } from './data/types/ps'
 import { clsx } from 'clsx'
 import { TooltipArrow } from '@radix-ui/react-tooltip'
 import { usePsDb } from './lib/usePsDb'
+import { resetPsDb } from './lib/psDb'
+import { PsEditor } from './components/PsEditor.tsx'
 
 interface Answers {
   [key: string]: Ps[]
@@ -41,6 +43,7 @@ function App() {
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false)
 
   // Когда подстанции загружены — инициализируем игровое поле.
   useEffect(() => {
@@ -134,6 +137,13 @@ function App() {
     })
   }
 
+  /** Сбрасывает базу подстанций к исходным данным и пересобирает игровое поле. */
+  const handleResetDb = async () => {
+    const fresh = await resetPsDb()
+    setPsList({ all: fresh })
+    setErrorCount(null)
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
@@ -185,6 +195,18 @@ function App() {
               }}
             >
               Заполнить правильными ответами
+            </button>
+            <button
+              className="text-3xl font-bold text-white bg-teal-600 px-4 py-3"
+              onClick={() => setEditorOpen(true)}
+            >
+              Редактировать базу
+            </button>
+            <button
+              className="text-3xl font-bold text-white bg-red-600 px-4 py-3"
+              onClick={handleResetDb}
+            >
+              Сбросить базу
             </button>
           </div>
           {!!errorCount && (
@@ -291,6 +313,16 @@ function App() {
           </Droppable>
         </div>
       </DndContext>
+      {editorOpen && (
+        <PsEditor
+          initialList={psDb}
+          onSaved={(list) => {
+            setPsList({ all: list })
+            setErrorCount(null)
+          }}
+          onClose={() => setEditorOpen(false)}
+        />
+      )}
     </div>
   )
 }

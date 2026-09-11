@@ -79,6 +79,12 @@ export const savePsList = async (list: PsList): Promise<void> => {
   await writeAll(db, list)
 }
 
+/** Сбрасывает базу к исходным (сид) данным из data/psDb.ts. */
+export const resetPsDb = async (): Promise<PsList> => {
+  await savePsList(seed)
+  return seed
+}
+
 /** Одиночная подстанция по id. */
 export const getPsById = async (id: number): Promise<Ps | undefined> => {
   const db = await openDb()

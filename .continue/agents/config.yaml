@@ -1,0 +1,91 @@
+# Это обновлённая конфигурация для работы с FreeDeepseekAPI
+# Остальные модели (GPT-5, Claude, локальная Ollama) закомментированы,
+# чтобы не расходовать лишние ресурсы и не путаться в выборе.
+
+name: Example Config
+version: 1.0.0
+schema: v1
+
+# Определяем модели для использования
+models:
+  # Модель DeepSeek через локальный прокси FreeDeepseekAPI
+  - name: DeepSeek (Local Proxy)
+    provider: openai
+    model: deepseek-reasoner  # Имя модели, которое принимает прокси[reference:3]
+    apiBase: http://localhost:9655/v1/  # Базовый URL прокси-сервера[reference:4]
+    apiKey: dummy-key  # Прокси по умолчанию не требует авторизации[reference:5], можно указать любое значение
+    roles:
+      - chat
+      - edit
+      - apply
+  # Модель DeepSeek через xKiro
+  - name: deepseek/deepseek-v4-pro (xKiro)
+    provider: openai
+    model: deepseek/deepseek-v4-pro
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+  # Модель Codestral через xKiro
+  - name: Codestral (xKiro)
+    provider: openai
+    model: mistralai/codestral-2508
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+  # Модель MiniMax M3 через xKiro
+  - name: MiniMax M3 (xKiro)
+    provider: openai
+    model: minimax/minimax-m3:free
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+  # Модель Qwen3.8 Max через xKiro
+  - name: Qwen3.8 Max (xKiro)
+    provider: openai
+    model: qwen/qwen3.8-max:free
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete
+      - embed
+      - rerank
+      - summarize
+  # Модель Qwen3.5 Plus через xKiro
+  - name: Qwen3.5 Plus (xKiro)
+    provider: openai
+    model: qwen/qwen3.5-plus:free
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete
+      - embed
+      - rerank
+      - summarize
+  # Остальные модели временно отключены для чистоты эксперимента
+  # - name: my gpt-5
+  #   provider: openai
+  #   model: gpt-5
+  #   apiKey: YOUR_OPENAI_API_KEY_HERE
+  # - uses: ollama/qwen2.5-coder-7b
+  # - uses: anthropic/claude-4-sonnet
+  #   with:
+  #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+# MCP-серверы пока можно оставить без изменений
+# mcpServers:
+#  - uses: anthropic/memory-mcp
