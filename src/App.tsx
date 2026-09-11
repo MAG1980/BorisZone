@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-import { psDb } from './data/psDb.ts'
 import { resList } from './data/resList.ts'
 import {
   DndContext,
@@ -25,22 +24,16 @@ import { Droppable } from './components/Droppable.tsx'
 import type { Ps } from './data/types/ps'
 import { clsx } from 'clsx'
 import { TooltipArrow } from '@radix-ui/react-tooltip'
+import { usePsDb } from './lib/usePsDb'
 
 interface Answers {
   [key: string]: Ps[]
 }
 
-const answers: Answers = {}
-psDb.forEach((ps) => {
-  if (!answers[ps.resName]) {
-    answers[ps.resName] = []
-  }
-  answers[ps.resName].push(ps)
-})
-
 function App() {
+  const { psDb, loading, error } = usePsDb()
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
-    all: psDb,
+    all: [],
   })
   const [activeElementId, setActiveElementId] = useState<number | null>(null)
   const [activeContainerId, setActiveContainerId] = useState<string | null>(
@@ -48,6 +41,22 @@ function App() {
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
+
+  // Когда подстанции загружены — инициализируем игровое поле.
+  useEffect(() => {
+    if (psDb.length) {
+      setPsList({ all: psDb })
+    }
+  }, [psDb])
+
+  // answers строится из загруженного списка подстанций.
+  const answers: Answers = {}
+  psDb.forEach((ps) => {
+    if (!answers[ps.resName]) {
+      answers[ps.resName] = []
+    }
+    answers[ps.resName].push(ps)
+  })
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     const elementId = Number(active.id)
@@ -132,6 +141,18 @@ function App() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  if (loading) {
+    return <div className="py-3 text-white text-2xl">Загрузка подстанций…</div>
+  }
+
+  if (error) {
+    return (
+      <div className="py-3 text-red-500 text-2xl">
+        Ошибка загрузки: {error.message}
+      </div>
+    )
+  }
 
   return (
     <div className="py-3">
