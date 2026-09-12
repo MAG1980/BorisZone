@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { clsx } from 'clsx'
 import type { PsList } from '@/data/types/psList'
 import { resList } from '@/data/resList'
 import { savePsList } from '@/lib/psDb'
@@ -16,6 +17,8 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
   const [list, setList] = useState<PsList>(initialList)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastAddedId, setLastAddedId] = useState<number | null>(null)
+  const lastRowRef = useRef<HTMLInputElement>(null)
 
   const updateField = (
     id: number,
@@ -28,11 +31,18 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
   }
 
   const addRow = () => {
-    setList((prev) => [
-      ...prev,
-      { id: nextId(prev), name: '', resName: resList[0].name },
-    ])
+    const id = nextId(list)
+    setList((prev) => [...prev, { id, name: '', resName: resList[0].name }])
+    setLastAddedId(id)
   }
+
+  // Прокручиваем и фокусируем только что добавленную строку,
+  // иначе она теряется в конце длинного списка.
+  useEffect(() => {
+    if (lastAddedId == null) return
+    lastRowRef.current?.scrollIntoView({ block: 'nearest' })
+    lastRowRef.current?.focus()
+  }, [lastAddedId])
 
   const removeRow = (id: number) => {
     setList((prev) => prev.filter((ps) => ps.id !== id))
@@ -84,10 +94,17 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
             </thead>
             <tbody>
               {list.map((ps) => (
-                <tr key={ps.id} className="border-t border-slate-700">
+                <tr
+                  key={ps.id}
+                  className={clsx(
+                    'border-t border-slate-700',
+                    ps.id === lastAddedId && 'bg-slate-700'
+                  )}
+                >
                   <td className="p-2">{ps.id}</td>
                   <td className="p-2">
                     <input
+                      ref={ps.id === lastAddedId ? lastRowRef : undefined}
                       className="w-full bg-slate-700 rounded px-2 py-1 text-white"
                       value={ps.name}
                       onChange={(e) =>
