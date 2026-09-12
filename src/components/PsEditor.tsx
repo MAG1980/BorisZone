@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { PsList } from '@/data/types/psList'
-import { resList } from '@/data/resList'
+import type { ResList } from '@/data/types/res'
 import { savePsList } from '@/lib/psDb'
 
 interface PsEditorProps {
   initialList: PsList
+  resList: ResList
   onSaved: (list: PsList) => void
   onClose: () => void
 }
@@ -13,7 +14,12 @@ interface PsEditorProps {
 const nextId = (list: PsList): number =>
   list.reduce((max, ps) => Math.max(max, ps.id), 0) + 1
 
-export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
+export const PsEditor = ({
+  initialList,
+  resList,
+  onSaved,
+  onClose,
+}: PsEditorProps) => {
   const [list, setList] = useState<PsList>(initialList)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,8 +28,8 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
 
   const updateField = (
     id: number,
-    field: 'name' | 'resName',
-    value: string
+    field: 'name' | 'resId',
+    value: string | number
   ) => {
     setList((prev) =>
       prev.map((ps) => (ps.id === id ? { ...ps, [field]: value } : ps))
@@ -32,7 +38,8 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
 
   const addRow = () => {
     const id = nextId(list)
-    setList((prev) => [...prev, { id, name: '', resName: resList[0].name }])
+    const resId = resList[0]?.id ?? 0
+    setList((prev) => [...prev, { id, name: '', resId }])
     setLastAddedId(id)
   }
 
@@ -88,7 +95,7 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
               <tr>
                 <th className="p-2 w-16">ID</th>
                 <th className="p-2">Название (name)</th>
-                <th className="p-2">Район (resName)</th>
+                <th className="p-2">Район (resId)</th>
                 <th className="p-2 w-24"></th>
               </tr>
             </thead>
@@ -115,13 +122,13 @@ export const PsEditor = ({ initialList, onSaved, onClose }: PsEditorProps) => {
                   <td className="p-2">
                     <select
                       className="w-full bg-slate-700 rounded px-2 py-1 text-white"
-                      value={ps.resName}
+                      value={ps.resId}
                       onChange={(e) =>
-                        updateField(ps.id, 'resName', e.target.value)
+                        updateField(ps.id, 'resId', Number(e.target.value))
                       }
                     >
                       {resList.map((res) => (
-                        <option key={res.name} value={res.name}>
+                        <option key={res.id} value={res.id}>
                           {res.name}
                         </option>
                       ))}

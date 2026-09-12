@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { resList } from './data/resList.ts'
 import {
   DndContext,
   type DragEndEvent,
@@ -25,7 +24,7 @@ import type { Ps } from './data/types/ps'
 import { clsx } from 'clsx'
 import { TooltipArrow } from '@radix-ui/react-tooltip'
 import { usePsDb } from './lib/usePsDb'
-import { resetPsDb } from './lib/psDb'
+import { getResList, resetPsDb } from './lib/psDb'
 import { PsEditor } from './components/PsEditor.tsx'
 
 interface Answers {
@@ -33,7 +32,7 @@ interface Answers {
 }
 
 function App() {
-  const { psDb, loading, error } = usePsDb()
+  const { psDb, resList, loading, error, setPsDb, setResList } = usePsDb()
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
     all: [],
   })
@@ -52,13 +51,18 @@ function App() {
     }
   }, [psDb])
 
-  // answers строится из загруженного списка подстанций.
+  /** Возвращает название РЭС по его id (для отображения и ключей контейнеров). */
+  const resNameById = (resId: number) =>
+    resList.find((r) => r.id === resId)?.name ?? ''
+
+  // answers строится из загруженного списка подстанций (ключ — название РЭС).
   const answers: Answers = {}
   psDb.forEach((ps) => {
-    if (!answers[ps.resName]) {
-      answers[ps.resName] = []
+    const key = resNameById(ps.resId)
+    if (!answers[key]) {
+      answers[key] = []
     }
-    answers[ps.resName].push(ps)
+    answers[key].push(ps)
   })
 
   const handleDragStart = ({ active }: DragStartEvent) => {
@@ -96,7 +100,7 @@ function App() {
 
     const movedPs = psList[activeContainerId][activeElementPosition]
 
-    if (movedPs.resName !== overContainerId) {
+    if (resNameById(movedPs.resId) !== overContainerId) {
       setErrorCount((prevState) => (prevState ? prevState + 1 : 1))
     }
 
@@ -137,9 +141,12 @@ function App() {
     })
   }
 
-  /** Сбрасывает базу подстанций к исходным данным и пересобирает игровое поле. */
+  /** Сбрасывает базу подстанций и таблицу РЭС к исходным данным. */
   const handleResetDb = async () => {
     const fresh = await resetPsDb()
+    const freshRes = await getResList()
+    setPsDb(fresh)
+    setResList(freshRes)
     setPsList({ all: fresh })
     setErrorCount(null)
   }
@@ -235,7 +242,7 @@ function App() {
                   Подсказка для {activePs.name}
                 </TooltipTrigger>
                 <TooltipContent className="text-xl text-white bg-blue-600 fill-blue-600 px-4 py-3">
-                  <p>{activePs.resName}</p>
+                  <p>{resNameById(activePs.resId)}</p>
                   <TooltipArrow className="fill-blue-600" />
                 </TooltipContent>
               </Tooltip>
@@ -287,7 +294,9 @@ function App() {
                             key={ps.id}
                             ps={ps}
                             variant={
-                              ps.resName === res.name ? 'success' : 'danger'
+                              resNameById(ps.resId) === res.name
+                                ? 'success'
+                                : 'danger'
                             }
                             active={ps.id === activePs?.id}
                           />
@@ -316,7 +325,9 @@ function App() {
       {editorOpen && (
         <PsEditor
           initialList={psDb}
+          resList={resList}
           onSaved={(list) => {
+            setPsDb(list)
             setPsList({ all: list })
             setErrorCount(null)
           }}
