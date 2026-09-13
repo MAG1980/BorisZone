@@ -26,6 +26,7 @@ import { TooltipArrow } from '@radix-ui/react-tooltip'
 import { usePsDb } from './lib/usePsDb'
 import { getResList, resetPsDb } from './lib/psDb'
 import { PsEditor } from './components/PsEditor.tsx'
+import { ResEditor } from './components/ResEditor.tsx'
 
 interface Answers {
   [key: string]: Ps[]
@@ -44,6 +45,7 @@ function App() {
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
+  const [resEditorOpen, setResEditorOpen] = useState(false)
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
 
   // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
@@ -245,6 +247,12 @@ function App() {
               Редактировать базу
             </button>
             <button
+              className="text-3xl font-bold text-white bg-indigo-600 px-4 py-3"
+              onClick={() => setResEditorOpen(true)}
+            >
+              Редактировать районы
+            </button>
+            <button
               className="text-3xl font-bold text-white bg-red-600 px-4 py-3"
               onClick={handleResetDb}
             >
@@ -370,6 +378,17 @@ function App() {
             setErrorCount(null)
           }}
           onClose={() => setEditorOpen(false)}
+        />
+      )}
+      {resEditorOpen && (
+        <ResEditor
+          initialList={resList}
+          zonesList={zonesList}
+          onSaved={(list) => {
+            setResList(list)
+            setErrorCount(null)
+          }}
+          onClose={() => setResEditorOpen(false)}
         />
       )}
     </div>
