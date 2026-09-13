@@ -28,10 +28,10 @@ models:
       - chat
       - edit
       - apply
-  # Модель Codestral через xKiro
-  - name: Codestral (xKiro)
+  # Модель Mistral Large 3 через xKiro
+  - name: Mistral Large 3 (xKiro)
     provider: openai
-    model: mistralai/codestral-2508
+    model: mistralai/mistral-large-2512
     apiBase: https://api.xkiro.com/v1
     apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
     roles:

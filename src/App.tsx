@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import {
   DndContext,
   type DragEndEvent,
-  DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
@@ -12,21 +11,14 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip.tsx'
-import { PsItem } from './components/PsItem.tsx'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { Droppable } from './components/Droppable.tsx'
 import type { Ps } from './data/types/ps'
-import { clsx } from 'clsx'
-import { TooltipArrow } from '@radix-ui/react-tooltip'
 import { usePsDb } from './lib/usePsDb'
 import { getResList, resetPsDb } from './lib/psDb'
 import { PsEditor } from './components/PsEditor.tsx'
 import { ResEditor } from './components/ResEditor.tsx'
+import { Toolbar } from './components/Toolbar.tsx'
+import { GameBoard } from './components/GameBoard.tsx'
 
 interface Answers {
   [key: string]: Ps[]
@@ -47,9 +39,6 @@ function App() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [resEditorOpen, setResEditorOpen] = useState(false)
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
-
-  /** Ссылка на <details> меню «Редактировать» — чтобы закрывать его после выбора. */
-  const editMenuRef = useRef<HTMLDetailsElement>(null)
 
   // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
   // иначе самая первая из списка зон.
@@ -202,187 +191,43 @@ function App() {
 
   return (
     <div className="py-3">
-      <div className="flex justify-between items-center h-[7vh]">
-        <div className="flex gap-4 items-center">
-          <select
-            className="text-2xl font-bold text-white bg-slate-700 px-4 py-3 rounded"
-            value={activeZoneId ?? ''}
-            onChange={(e) => setActiveZoneId(Number(e.target.value))}
-          >
-            {zonesList.map((zone) => (
-              <option key={zone.id} value={zone.id}>
-                {zone.name}
-              </option>
-            ))}
-          </select>
-          <div className="flex gap-2">
-            <button
-              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-              onClick={() => {
-                shufflePsSimple(zonePs)
-                setErrorCount(null)
-              }}
-            >
-              Перемешать
-            </button>
-            <button
-              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-              onClick={() => {
-                setPsList({ all: zonePs })
-                setErrorCount(null)
-              }}
-            >
-              Расставить по порядку
-            </button>
-            <button
-              className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-              onClick={() => {
-                setPsList({ ...answers, all: [] })
-                setErrorCount(null)
-              }}
-            >
-              Заполнить правильными ответами
-            </button>
-            <details ref={editMenuRef} className="relative">
-              <summary className="text-3xl font-bold text-white bg-teal-600 px-4 py-3 rounded cursor-pointer list-none select-none">
-                Редактировать
-              </summary>
-              <div className="absolute z-10 flex flex-col bg-teal-600 rounded mt-1 overflow-hidden shadow-lg">
-                <button
-                  className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
-                  onClick={() => {
-                    setEditorOpen(true)
-                    if (editMenuRef.current) editMenuRef.current.open = false
-                  }}
-                >
-                  Подстанции
-                </button>
-                <button
-                  className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
-                  onClick={() => {
-                    setResEditorOpen(true)
-                    if (editMenuRef.current) editMenuRef.current.open = false
-                  }}
-                >
-                  Районы
-                </button>
-                <button
-                  className="text-3xl font-bold text-white bg-red-600 px-4 py-3 text-left hover:bg-red-700"
-                  onClick={() => {
-                    handleResetDb()
-                    if (editMenuRef.current) editMenuRef.current.open = false
-                  }}
-                >
-                  Сброс
-                </button>
-              </div>
-            </details>
-          </div>
-          {!!errorCount && (
-            <div className="flex items-center gap-2">
-              <div className="text-white font-bold">
-                Количество ошибок
-                <span className="ml-2 bg-white text-red-500  rounded-full py-4 px-6">
-                  {errorCount}
-                </span>
-              </div>
-              <button
-                className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
-                onClick={() => setErrorCount(0)}
-              >
-                Сбросить счётчик ошибок
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div>
-          {activePs && (
-            <>
-              <Tooltip>
-                <TooltipTrigger className="fill-blue-600 text-3xl font-bold text-white bg-teal-600 px-4 py-3">
-                  Подсказка для {activePs.name}
-                </TooltipTrigger>
-                <TooltipContent className="text-xl text-white bg-blue-600 fill-blue-600 px-4 py-3">
-                  <p>{resNameById(activePs.resId)}</p>
-                  <TooltipArrow className="fill-blue-600" />
-                </TooltipContent>
-              </Tooltip>
-            </>
-          )}
-        </div>
-      </div>
+      <Toolbar
+        zonesList={zonesList}
+        activeZoneId={activeZoneId}
+        onZoneChange={setActiveZoneId}
+        onShuffle={() => {
+          shufflePsSimple(zonePs)
+          setErrorCount(null)
+        }}
+        onOrder={() => {
+          setPsList({ all: zonePs })
+          setErrorCount(null)
+        }}
+        onFillAnswers={() => {
+          setPsList({ ...answers, all: [] })
+          setErrorCount(null)
+        }}
+        onEditPs={() => setEditorOpen(true)}
+        onEditRes={() => setResEditorOpen(true)}
+        onResetDb={handleResetDb}
+        errorCount={errorCount}
+        onResetErrors={() => setErrorCount(0)}
+        activePs={activePs}
+        activePsResName={activePs ? resNameById(activePs.resId) : ''}
+      />
       <DndContext
         collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
-        <div className="grid content-between grid-cols-12 auto-rows-max gap-3 h-[90vh]">
-          <DragOverlay>
-            {/*Компонент, который отображается в процессе перемещения.*/}
-            {activePs ? <PsItem ps={activePs} /> : null}
-          </DragOverlay>
-          <div className="col-span-12 auto-rows-[minmax(232px,auto)] grid-cols-subgrid grid justify-around text-white gap-2">
-            {zoneRes.map((res) => {
-              let matches = false
-              const currentPsSet = psList[res.name]
-              const currentResAnswers = answers[res.name]
-              if (currentPsSet) {
-                matches =
-                  !!currentPsSet.length &&
-                  currentPsSet.length === currentResAnswers.length &&
-                  currentPsSet.every((ps) => currentResAnswers.includes(ps))
-              }
-              return (
-                <div
-                  className={clsx(
-                    'col-span-3 flex flex-col bg-blue-500 rounded-lg p-3 gap-2',
-                    matches && 'bg-teal-500'
-                  )}
-                  key={res.name}
-                >
-                  <div className="flex justify-center items-center px-2 py-3 ">
-                    {res.name}
-                  </div>
-                  <Droppable
-                    id={res.name}
-                    className={'grow p-1 rounded-lg bg-white'}
-                  >
-                    <div className="grid grid-cols-4 gap-1  rounded-lg  ">
-                      {psList[res.name] &&
-                        psList[res.name].map((ps) => (
-                          <PsItem
-                            key={ps.id}
-                            ps={ps}
-                            variant={
-                              resNameById(ps.resId) === res.name
-                                ? 'success'
-                                : 'danger'
-                            }
-                            active={ps.id === activePs?.id}
-                          />
-                        ))}
-                    </div>
-                  </Droppable>
-                </div>
-              )
-            })}
-          </div>
-
-          <Droppable
-            id={'all'}
-            className={
-              'col-span-12 grid-cols-subgrid p-2 bg-blue-800 rounded-lg'
-            }
-          >
-            <div className="grid grid-cols-16 gap-1">
-              {psList.all.map((ps) => (
-                <PsItem key={ps.id} ps={ps} active={ps.id === activePs?.id} />
-              ))}
-            </div>
-          </Droppable>
-        </div>
+        <GameBoard
+          zoneRes={zoneRes}
+          psList={psList}
+          answers={answers}
+          activePs={activePs}
+          resNameById={resNameById}
+        />
       </DndContext>
       {editorOpen && (
         <PsEditor
