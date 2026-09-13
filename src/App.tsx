@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import {
   DndContext,
@@ -47,6 +47,9 @@ function App() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [resEditorOpen, setResEditorOpen] = useState(false)
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
+
+  /** Ссылка на <details> меню «Редактировать» — чтобы закрывать его после выбора. */
+  const editMenuRef = useRef<HTMLDetailsElement>(null)
 
   // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
   // иначе самая первая из списка зон.
@@ -240,24 +243,40 @@ function App() {
             >
               Заполнить правильными ответами
             </button>
-            <button
-              className="text-3xl font-bold text-white bg-teal-600 px-4 py-3"
-              onClick={() => setEditorOpen(true)}
-            >
-              Редактировать базу
-            </button>
-            <button
-              className="text-3xl font-bold text-white bg-indigo-600 px-4 py-3"
-              onClick={() => setResEditorOpen(true)}
-            >
-              Редактировать районы
-            </button>
-            <button
-              className="text-3xl font-bold text-white bg-red-600 px-4 py-3"
-              onClick={handleResetDb}
-            >
-              Сбросить базу
-            </button>
+            <details ref={editMenuRef} className="relative">
+              <summary className="text-3xl font-bold text-white bg-teal-600 px-4 py-3 rounded cursor-pointer list-none select-none">
+                Редактировать
+              </summary>
+              <div className="absolute z-10 flex flex-col bg-teal-600 rounded mt-1 overflow-hidden shadow-lg">
+                <button
+                  className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
+                  onClick={() => {
+                    setEditorOpen(true)
+                    if (editMenuRef.current) editMenuRef.current.open = false
+                  }}
+                >
+                  Подстанции
+                </button>
+                <button
+                  className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
+                  onClick={() => {
+                    setResEditorOpen(true)
+                    if (editMenuRef.current) editMenuRef.current.open = false
+                  }}
+                >
+                  Районы
+                </button>
+                <button
+                  className="text-3xl font-bold text-white bg-red-600 px-4 py-3 text-left hover:bg-red-700"
+                  onClick={() => {
+                    handleResetDb()
+                    if (editMenuRef.current) editMenuRef.current.open = false
+                  }}
+                >
+                  Сброс
+                </button>
+              </div>
+            </details>
           </div>
           {!!errorCount && (
             <div className="flex items-center gap-2">
