@@ -32,7 +32,8 @@ interface Answers {
 }
 
 function App() {
-  const { psDb, resList, loading, error, setPsDb, setResList } = usePsDb()
+  const { psDb, resList, zonesList, loading, error, setPsDb, setResList } =
+    usePsDb()
   const [psList, setPsList] = useState<Record<string, Ps[]>>({
     all: [],
   })
@@ -43,21 +44,45 @@ function App() {
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
+  const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
 
-  // Когда подстанции загружены — инициализируем игровое поле.
+  // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
+  // иначе самая первая из списка зон.
   useEffect(() => {
-    if (psDb.length) {
-      setPsList({ all: psDb })
-    }
-  }, [psDb])
+    if (activeZoneId !== null || !zonesList.length) return
+    const zoneWithRes = zonesList.find((z) =>
+      resList.some((r) => r.zoneId === z.id)
+    )
+    setActiveZoneId((zoneWithRes ?? zonesList[0]).id)
+  }, [zonesList, resList, activeZoneId])
+
+  /** РЭС, относящиеся к активной зоне. */
+  const zoneRes =
+    activeZoneId === null
+      ? []
+      : resList.filter((r) => r.zoneId === activeZoneId)
+
+  /** Множество id РЭС активной зоны. */
+  const zoneResIds = new Set(zoneRes.map((r) => r.id))
+
+  /** Подстанции активной зоны. */
+  const zonePs = psDb.filter((ps) => zoneResIds.has(ps.resId))
+
+  // При смене активной зоны (или после загрузки/сброса данных) —
+  // пересобираем игровое поле из ПС активной зоны.
+  useEffect(() => {
+    setPsList({ all: zonePs })
+    setErrorCount(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeZoneId, psDb, resList])
 
   /** Возвращает название РЭС по его id (для отображения и ключей контейнеров). */
   const resNameById = (resId: number) =>
     resList.find((r) => r.id === resId)?.name ?? ''
 
-  // answers строится из загруженного списка подстанций (ключ — название РЭС).
+  // answers строится из ПС активной зоны (ключ — название РЭС).
   const answers: Answers = {}
-  psDb.forEach((ps) => {
+  zonePs.forEach((ps) => {
     const key = resNameById(ps.resId)
     if (!answers[key]) {
       answers[key] = []
@@ -147,7 +172,6 @@ function App() {
     const freshRes = await getResList()
     setPsDb(fresh)
     setResList(freshRes)
-    setPsList({ all: fresh })
     setErrorCount(null)
   }
 
@@ -174,12 +198,23 @@ function App() {
   return (
     <div className="py-3">
       <div className="flex justify-between items-center h-[7vh]">
-        <div className="flex gap-52">
+        <div className="flex gap-4 items-center">
+          <select
+            className="text-2xl font-bold text-white bg-slate-700 px-4 py-3 rounded"
+            value={activeZoneId ?? ''}
+            onChange={(e) => setActiveZoneId(Number(e.target.value))}
+          >
+            {zonesList.map((zone) => (
+              <option key={zone.id} value={zone.id}>
+                {zone.name}
+              </option>
+            ))}
+          </select>
           <div className="flex gap-2">
             <button
               className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
               onClick={() => {
-                shufflePsSimple(psDb)
+                shufflePsSimple(zonePs)
                 setErrorCount(null)
               }}
             >
@@ -188,7 +223,7 @@ function App() {
             <button
               className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
               onClick={() => {
-                setPsList({ all: psDb })
+                setPsList({ all: zonePs })
                 setErrorCount(null)
               }}
             >
@@ -262,7 +297,7 @@ function App() {
             {activePs ? <PsItem ps={activePs} /> : null}
           </DragOverlay>
           <div className="col-span-12 auto-rows-[minmax(232px,auto)] grid-cols-subgrid grid justify-around text-white gap-2">
-            {resList.map((res) => {
+            {zoneRes.map((res) => {
               let matches = false
               const currentPsSet = psList[res.name]
               const currentResAnswers = answers[res.name]
@@ -324,10 +359,13 @@ function App() {
       </DndContext>
       {editorOpen && (
         <PsEditor
-          initialList={psDb}
-          resList={resList}
+          initialList={zonePs}
+          resList={zoneRes}
           onSaved={(list) => {
-            setPsDb(list)
+            // Сохраняем только ПС активной зоны, остальные не трогаем.
+            const others = psDb.filter((ps) => !zoneResIds.has(ps.resId))
+            const merged = [...others, ...list]
+            setPsDb(merged)
             setPsList({ all: list })
             setErrorCount(null)
           }}

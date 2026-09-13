@@ -1,13 +1,16 @@
 import type { Ps } from '@/data/types/ps'
 import type { PsList } from '@/data/types/psList'
 import type { Res, ResList } from '@/data/types/res'
+import type { Zone, ZoneList } from '@/data/types/zone'
 import { psDb as seed } from '@/data/psDb'
 import { resList as seedRes } from '@/data/resList'
+import { zonesList as seedZones, DEFAULT_ZONE_ID } from '@/data/zonesList'
 
 const DB_NAME = 'boriszone'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORE = 'ps'
 const RES_STORE = 'res'
+const ZONE_STORE = 'zones'
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -26,6 +29,10 @@ const openDb = (): Promise<IDBDatabase> => {
       // Отдельная таблица для названий РЭС.
       if (!db.objectStoreNames.contains(RES_STORE)) {
         db.createObjectStore(RES_STORE, { keyPath: 'id' })
+      }
+      // Отдельная таблица для зон.
+      if (!db.objectStoreNames.contains(ZONE_STORE)) {
+        db.createObjectStore(ZONE_STORE, { keyPath: 'id' })
       }
     }
 
@@ -88,6 +95,22 @@ const migrateLegacyPs = (list: PsList): { list: PsList; changed: boolean } => {
 }
 
 /**
+ * Мигрирует старые записи РЭС без привязки к зоне,
+ * проставляя зону по умолчанию (Борисоглебскую).
+ */
+const migrateLegacyRes = (
+  list: ResList
+): { list: ResList; changed: boolean } => {
+  let changed = false
+  const migrated = list.map((res) => {
+    if (typeof (res as Res).zoneId === 'number') return res
+    changed = true
+    return { ...res, zoneId: DEFAULT_ZONE_ID }
+  })
+  return { list: migrated, changed }
+}
+
+/**
  * Возвращает список подстанций из IndexedDB.
  * При первом запуске (пустая база) заполняет её сид-данными из data/psDb.ts.
  */
@@ -129,7 +152,13 @@ export const getResList = async (): Promise<ResList> => {
     return seedRes
   }
 
-  return existing
+  // Совместимость со старым форматом (без zoneId).
+  const { list, changed } = migrateLegacyRes(existing)
+  if (changed) {
+    await saveResList(list)
+  }
+
+  return list
 }
 
 /** Полностью перезаписывает таблицу РЭС. */
@@ -145,10 +174,40 @@ export const resetResDb = async (): Promise<ResList> => {
   return seedRes
 }
 
-/** Сбрасывает базу подстанций и таблицу РЭС к исходным данным. */
+/**
+ * Возвращает список зон из IndexedDB.
+ * При первом запуске (пустая таблица) заполняет её сид-данными из data/zonesList.ts.
+ */
+export const getZonesList = async (): Promise<ZoneList> => {
+  const db = await openDb()
+  const existing = await readAll<Zone>(db, ZONE_STORE)
+
+  if (existing.length === 0) {
+    await writeAll(db, ZONE_STORE, seedZones)
+    return seedZones
+  }
+
+  return existing
+}
+
+/** Полностью перезаписывает таблицу зон. */
+export const saveZonesList = async (list: ZoneList): Promise<void> => {
+  const db = await openDb()
+  await clearStore(db, ZONE_STORE)
+  await writeAll(db, ZONE_STORE, list)
+}
+
+/** Сбрасывает таблицу зон к исходным (сид) данным. */
+export const resetZonesDb = async (): Promise<ZoneList> => {
+  await saveZonesList(seedZones)
+  return seedZones
+}
+
+/** Сбрасывает базу подстанций, таблицу РЭС и зоны к исходным данным. */
 export const resetPsDb = async (): Promise<PsList> => {
   await savePsList(seed)
   await resetResDb()
+  await resetZonesDb()
   return seed
 }
 
