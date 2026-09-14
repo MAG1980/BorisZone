@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import type { Ps } from '@/data/types/ps'
 import { useDraggable } from '@dnd-kit/core'
 import { clsx } from 'clsx'
@@ -7,6 +8,8 @@ interface Props {
   className?: string
   variant?: 'danger' | 'success' | 'default'
   active?: boolean
+  /** Вызывается по ПКМ, чтобы показать подсказку с названием РЭС. */
+  onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
 export const PsItem = ({
@@ -14,6 +17,7 @@ export const PsItem = ({
   className,
   variant = 'default',
   active = false,
+  onShowHint,
 }: Props) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: ps.id,
@@ -44,6 +48,11 @@ export const PsItem = ({
       {...listeners}
       style={style}
       className={classes}
+      onContextMenu={(e) => {
+        if (!onShowHint) return
+        e.preventDefault()
+        onShowHint(ps, e)
+      }}
     >
       {ps.name}
     </div>

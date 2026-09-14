@@ -1,6 +1,7 @@
+import type { MouseEvent } from 'react'
 import { clsx } from 'clsx'
-import { Droppable } from './Droppable'
-import { PsItem } from './PsItem'
+import { Droppable } from './Droppable.tsx'
+import { PsItem } from './PsItem.tsx'
 import type { Res } from '@/data/types/res'
 import type { Ps } from '@/data/types/ps'
 
@@ -10,6 +11,7 @@ interface Props {
   answers: Ps[]
   activePsId: number | null
   resNameById: (resId: number) => string
+  onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
 /** Колонка одного РЭС: заголовок и зона для перетаскивания подстанций. */
@@ -19,6 +21,7 @@ export const ResColumn = ({
   answers,
   activePsId,
   resNameById,
+  onShowHint,
 }: Props) => {
   const matches =
     !!psList.length &&
@@ -45,6 +48,7 @@ export const ResColumn = ({
                 resNameById(ps.resId) === res.name ? 'success' : 'danger'
               }
               active={ps.id === activePsId}
+              onShowHint={onShowHint}
             />
           ))}
         </div>

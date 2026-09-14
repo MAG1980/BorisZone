@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { DragOverlay } from '@dnd-kit/core'
 import { Droppable } from './Droppable.tsx'
 import { PsItem } from './PsItem.tsx'
@@ -11,6 +12,7 @@ interface Props {
   answers: Record<string, Ps[]>
   activePs: Ps | null
   resNameById: (resId: number) => string
+  onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
 /** Игровое поле: колонки РЭС и нижний контейнер «all». */
@@ -20,6 +22,7 @@ export const GameBoard = ({
   answers,
   activePs,
   resNameById,
+  onShowHint,
 }: Props) => {
   return (
     <div className="grid content-between grid-cols-12 auto-rows-max gap-3 h-[90vh]">
@@ -36,6 +39,7 @@ export const GameBoard = ({
             answers={answers[res.name] ?? []}
             activePsId={activePs?.id ?? null}
             resNameById={resNameById}
+            onShowHint={onShowHint}
           />
         ))}
       </div>
@@ -46,7 +50,12 @@ export const GameBoard = ({
       >
         <div className="grid grid-cols-16 gap-1">
           {psList.all.map((ps) => (
-            <PsItem key={ps.id} ps={ps} active={ps.id === activePs?.id} />
+            <PsItem
+              key={ps.id}
+              ps={ps}
+              active={ps.id === activePs?.id}
+              onShowHint={onShowHint}
+            />
           ))}
         </div>
       </Droppable>

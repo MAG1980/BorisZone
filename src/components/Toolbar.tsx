@@ -1,8 +1,6 @@
 import { ZoneSelect } from './ZoneSelect.tsx'
 import { EditMenu } from './EditMenu.tsx'
 import { ErrorCounter } from './ErrorCounter.tsx'
-import { HintTooltip } from './HintTooltip.tsx'
-import type { Ps } from '@/data/types/ps'
 import type { ZoneList } from '@/data/types/zone'
 
 interface Props {
@@ -17,8 +15,6 @@ interface Props {
   onResetDb: () => void
   errorCount: number | null
   onResetErrors: () => void
-  activePs: Ps | null
-  activePsResName: string
 }
 
 /** Верхняя панель: выбор зоны, действия, меню редактирования, счётчик ошибок и подсказка. */
@@ -34,8 +30,6 @@ export const Toolbar = ({
   onResetDb,
   errorCount,
   onResetErrors,
-  activePs,
-  activePsResName,
 }: Props) => {
   return (
     <div className="flex justify-between items-center h-[7vh]">
@@ -72,12 +66,6 @@ export const Toolbar = ({
         </div>
         {!!errorCount && (
           <ErrorCounter errorCount={errorCount} onReset={onResetErrors} />
-        )}
-      </div>
-
-      <div>
-        {activePs && (
-          <HintTooltip activePs={activePs} resName={activePsResName} />
         )}
       </div>
     </div>

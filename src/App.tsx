@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import './App.css'
 import {
   DndContext,
@@ -19,6 +19,7 @@ import { PsEditor } from './components/PsEditor.tsx'
 import { ResEditor } from './components/ResEditor.tsx'
 import { Toolbar } from './components/Toolbar.tsx'
 import { GameBoard } from './components/GameBoard.tsx'
+import { PsHint } from './components/PsHint.tsx'
 
 interface Answers {
   [key: string]: Ps[]
@@ -39,6 +40,13 @@ function App() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [resEditorOpen, setResEditorOpen] = useState(false)
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
+  /** Активная подсказка по ПКМ: название ПС, РЭС и координаты курсора. */
+  const [hint, setHint] = useState<{
+    psName: string
+    resName: string
+    x: number
+    y: number
+  } | null>(null)
 
   // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
   // иначе самая первая из списка зон.
@@ -169,6 +177,16 @@ function App() {
     setErrorCount(null)
   }
 
+  /** Показывает подсказку с названием РЭС по ПКМ на блоке подстанции. */
+  const handleShowHint = (ps: Ps, e: MouseEvent) => {
+    setHint({
+      psName: ps.name,
+      resName: resNameById(ps.resId),
+      x: e.clientX,
+      y: e.clientY,
+    })
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
@@ -212,8 +230,6 @@ function App() {
         onResetDb={handleResetDb}
         errorCount={errorCount}
         onResetErrors={() => setErrorCount(0)}
-        activePs={activePs}
-        activePsResName={activePs ? resNameById(activePs.resId) : ''}
       />
       <DndContext
         collisionDetection={rectIntersection}
@@ -227,6 +243,7 @@ function App() {
           answers={answers}
           activePs={activePs}
           resNameById={resNameById}
+          onShowHint={handleShowHint}
         />
       </DndContext>
       {editorOpen && (
@@ -253,6 +270,15 @@ function App() {
             setErrorCount(null)
           }}
           onClose={() => setResEditorOpen(false)}
+        />
+      )}
+      {hint && (
+        <PsHint
+          psName={hint.psName}
+          resName={hint.resName}
+          x={hint.x}
+          y={hint.y}
+          onClose={() => setHint(null)}
         />
       )}
     </div>
