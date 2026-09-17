@@ -62,6 +62,20 @@ models:
       - embed
       - rerank
       - summarize
+    # Модель Qwen3.7 Max через xKiro
+  - name: Qwen3.7 Max (xKiro)
+    provider: openai
+    model: qwen/qwen3.7-max:free
+    apiBase: https://api.xkiro.com/v1
+    apiKey: sk-xt-1cd191aa5246e436a57394bcaf14dace0f65741f3f19e9ef
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete
+      - embed
+      - rerank
+      - summarize
   # Модель Qwen3.5 Plus через xKiro
   - name: Qwen3.5 Plus (xKiro)
     provider: openai

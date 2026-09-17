@@ -32,28 +32,28 @@ export const Toolbar = ({
   onResetErrors,
 }: Props) => {
   return (
-    <div className="flex justify-between items-center h-[7vh]">
-      <div className="flex gap-4 items-center">
-        <ZoneSelect
-          zonesList={zonesList}
-          activeZoneId={activeZoneId}
-          onChange={onZoneChange}
-        />
-        <div className="flex gap-2">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-slate-800/60 p-3 shadow-lg ring-1 ring-white/10">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
+          <ZoneSelect
+            zonesList={zonesList}
+            activeZoneId={activeZoneId}
+            onChange={onZoneChange}
+          />
           <button
-            className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-lg font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95"
             onClick={onShuffle}
           >
             Перемешать
           </button>
           <button
-            className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-lg font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95"
             onClick={onOrder}
           >
             Расставить по порядку
           </button>
           <button
-            className="text-3xl font-bold text-white bg-blue-600 px-4 py-3"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-lg font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95"
             onClick={onFillAnswers}
           >
             Заполнить правильными ответами
