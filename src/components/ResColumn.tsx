@@ -31,7 +31,7 @@ export const ResColumn = ({
   return (
     <div
       className={clsx(
-        'col-span-3 flex flex-col bg-blue-500 rounded-lg p-3 gap-2',
+        'flex flex-col w-[460px] bg-blue-500 rounded-lg p-3 gap-2',
         matches && 'bg-teal-500'
       )}
     >
@@ -39,7 +39,7 @@ export const ResColumn = ({
         {res.name}
       </div>
       <Droppable id={res.name} className={'grow p-1 rounded-lg bg-white'}>
-        <div className="grid grid-cols-4 gap-1  rounded-lg  ">
+        <div className="flex flex-wrap gap-1  rounded-lg  ">
           {psList.map((ps) => (
             <PsItem
               key={ps.id}

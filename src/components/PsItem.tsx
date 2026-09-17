@@ -30,7 +30,7 @@ export const PsItem = ({
   }
 
   const baseStyles = clsx(
-    'flex justify-center items-center text-blue-800 text-pretty p-1 rounded-md max-w-[150px] min-h-[70px]',
+    'flex justify-center items-center text-blue-800 text-pretty p-1 rounded-md w-[140px] min-h-[70px]',
     { 'bg-yellow-500': active }
   )
 
