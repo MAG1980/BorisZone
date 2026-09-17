@@ -39,6 +39,7 @@ export const Toolbar = ({
             zonesList={zonesList}
             activeZoneId={activeZoneId}
             onChange={onZoneChange}
+            onEditPs={onEditPs}
           />
           <button
             className="rounded-lg bg-blue-600 px-4 py-2 text-lg font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95"
