@@ -6,7 +6,7 @@ interface Props {
   zonesList: ZoneList
   activeZoneId: number | null
   onChange: (zoneId: number) => void
-  onEditPs: () => void
+  onEditPs: (zoneId: number) => void
 }
 
 /** Кастомный выпадающий список выбора активной зоны. */
@@ -124,7 +124,7 @@ export const ZoneSelect = ({
                   )}
                   <button
                     type="button"
-                    onClick={() => handleEdit(onEditPs)}
+                    onClick={() => handleEdit(() => onEditPs(zone.id))}
                     aria-label="Редактор подстанций"
                     title="Редактор подстанций"
                     className="mr-1 rounded-md p-2 text-slate-300 transition hover:bg-slate-600 hover:text-white"

@@ -7,6 +7,8 @@ import { savePsList } from '@/lib/psDb'
 interface PsEditorProps {
   initialList: PsList
   resList: ResList
+  /** Название редактируемой зоны (для заголовка окна). */
+  zoneName: string
   onSaved: (list: PsList) => void
   onClose: () => void
 }
@@ -17,6 +19,7 @@ const nextId = (list: PsList): number =>
 export const PsEditor = ({
   initialList,
   resList,
+  zoneName,
   onSaved,
   onClose,
 }: PsEditorProps) => {
@@ -75,7 +78,7 @@ export const PsEditor = ({
       <div className="bg-slate-800 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center p-4 border-b border-slate-600">
           <h2 className="text-2xl font-bold text-white">
-            Редактор базы подстанций
+            Редактор подстанций: {zoneName}
           </h2>
           <button
             className="text-white bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded"

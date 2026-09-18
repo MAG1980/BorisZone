@@ -10,7 +10,7 @@ interface Props {
   onShuffle: () => void
   onOrder: () => void
   onFillAnswers: () => void
-  onEditPs: () => void
+  onEditPs: (zoneId?: number) => void
   onEditRes: () => void
   onResetDb: () => void
   errorCount: number | null

@@ -37,7 +37,7 @@ function App() {
   )
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
-  const [editorOpen, setEditorOpen] = useState(false)
+  const [editorZoneId, setEditorZoneId] = useState<number | null>(null)
   const [resEditorOpen, setResEditorOpen] = useState(false)
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
   /** Активная подсказка по ПКМ: название ПС, РЭС и координаты курсора. */
@@ -187,6 +187,20 @@ function App() {
     })
   }
 
+  /** Открывает редактор подстанций для указанной зоны (по умолчанию — активной). */
+  const handleEditPs = (zoneId?: number) => {
+    setEditorZoneId(zoneId ?? activeZoneId)
+  }
+
+  // Данные редактируемой зоны (может отличаться от активной).
+  const editorZone = zonesList.find((z) => z.id === editorZoneId) ?? null
+  const editorZoneRes =
+    editorZoneId === null
+      ? []
+      : resList.filter((r) => r.zoneId === editorZoneId)
+  const editorZoneResIds = new Set(editorZoneRes.map((r) => r.id))
+  const editorZonePs = psDb.filter((ps) => editorZoneResIds.has(ps.resId))
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
@@ -234,7 +248,7 @@ function App() {
           setPsList({ ...answers, all: [] })
           setErrorCount(null)
         }}
-        onEditPs={() => setEditorOpen(true)}
+        onEditPs={handleEditPs}
         onEditRes={() => setResEditorOpen(true)}
         onResetDb={handleResetDb}
         errorCount={errorCount}
@@ -255,19 +269,18 @@ function App() {
           onShowHint={handleShowHint}
         />
       </DndContext>
-      {editorOpen && (
+      {editorZoneId !== null && (
         <PsEditor
-          initialList={zonePs}
-          resList={zoneRes}
+          initialList={editorZonePs}
+          resList={editorZoneRes}
+          zoneName={editorZone?.name ?? ''}
           onSaved={(list) => {
-            // Сохраняем только ПС активной зоны, остальные не трогаем.
-            const others = psDb.filter((ps) => !zoneResIds.has(ps.resId))
-            const merged = [...others, ...list]
-            setPsDb(merged)
-            setPsList({ all: list })
+            // Сохраняем только ПС редактируемой зоны, остальные не трогаем.
+            const others = psDb.filter((ps) => !editorZoneResIds.has(ps.resId))
+            setPsDb([...others, ...list])
             setErrorCount(null)
           }}
-          onClose={() => setEditorOpen(false)}
+          onClose={() => setEditorZoneId(null)}
         />
       )}
       {resEditorOpen && (
