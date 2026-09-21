@@ -82,10 +82,10 @@ function App() {
   const resNameById = (resId: number) =>
     resList.find((r) => r.id === resId)?.name ?? ''
 
-  // answers строится из ПС активной зоны (ключ — название РЭС).
+  // answers строится из ПС активной зоны (ключ — id РЭС).
   const answers: Answers = {}
   zonePs.forEach((ps) => {
-    const key = resNameById(ps.resId)
+    const key = String(ps.resId)
     if (!answers[key]) {
       answers[key] = []
     }
@@ -127,7 +127,11 @@ function App() {
 
     const movedPs = psList[activeContainerId][activeElementPosition]
 
-    if (resNameById(movedPs.resId) !== overContainerId) {
+    // Возврат в лоток «all» ошибкой не считается.
+    if (
+      overContainerId !== 'all' &&
+      String(movedPs.resId) !== overContainerId
+    ) {
       setErrorCount((prevState) => (prevState ? prevState + 1 : 1))
     }
 
@@ -159,8 +163,15 @@ function App() {
   const getPsPosition = (id: number, containerId: string) =>
     psList[containerId].findIndex((ps) => ps.id === id)
 
-  const shuffleArraySimple = (array: Ps[]) =>
-    array.slice().sort(() => Math.random() - 0.5)
+  /** Перемешивание по алгоритму Фишера–Йетса (без статистического смещения). */
+  const shuffleArraySimple = (array: Ps[]) => {
+    const result = array.slice()
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[result[i], result[j]] = [result[j], result[i]]
+    }
+    return result
+  }
 
   const shufflePsSimple = (psDb: Ps[]) => {
     setPsList({
@@ -265,7 +276,6 @@ function App() {
           psList={psList}
           answers={answers}
           activePs={activePs}
-          resNameById={resNameById}
           onShowHint={handleShowHint}
         />
       </DndContext>

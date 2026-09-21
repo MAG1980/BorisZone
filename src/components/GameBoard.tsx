@@ -11,7 +11,6 @@ interface Props {
   psList: Record<string, Ps[]>
   answers: Record<string, Ps[]>
   activePs: Ps | null
-  resNameById: (resId: number) => string
   onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
@@ -21,7 +20,6 @@ export const GameBoard = ({
   psList,
   answers,
   activePs,
-  resNameById,
   onShowHint,
 }: Props) => {
   return (
@@ -33,12 +31,11 @@ export const GameBoard = ({
       <div className="flex justify-center flex-wrap text-white p-2 gap-1">
         {zoneRes.map((res) => (
           <ResColumn
-            key={res.name}
+            key={res.id}
             res={res}
-            psList={psList[res.name] ?? []}
-            answers={answers[res.name] ?? []}
+            psList={psList[String(res.id)] ?? []}
+            answers={answers[String(res.id)] ?? []}
             activePsId={activePs?.id ?? null}
-            resNameById={resNameById}
             onShowHint={onShowHint}
           />
         ))}

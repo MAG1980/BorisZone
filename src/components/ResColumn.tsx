@@ -10,7 +10,6 @@ interface Props {
   psList: Ps[]
   answers: Ps[]
   activePsId: number | null
-  resNameById: (resId: number) => string
   onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
@@ -20,7 +19,6 @@ export const ResColumn = ({
   psList,
   answers,
   activePsId,
-  resNameById,
   onShowHint,
 }: Props) => {
   const matches =
@@ -38,15 +36,13 @@ export const ResColumn = ({
       <div className="flex justify-center items-center px-2 py-3 ">
         {res.name}
       </div>
-      <Droppable id={res.name} className={'grow p-1 rounded-lg bg-white'}>
+      <Droppable id={String(res.id)} className={'grow p-1 rounded-lg bg-white'}>
         <div className="flex flex-wrap gap-1  rounded-lg  ">
           {psList.map((ps) => (
             <PsItem
               key={ps.id}
               ps={ps}
-              variant={
-                resNameById(ps.resId) === res.name ? 'success' : 'danger'
-              }
+              variant={ps.resId === res.id ? 'success' : 'danger'}
               active={ps.id === activePsId}
               onShowHint={onShowHint}
             />
