@@ -7,6 +7,11 @@ import { saveResList } from '@/lib/psDb'
 interface ResEditorProps {
   initialList: ResList
   zonesList: ZoneList
+  /**
+   * Зона, из которой открыт редактор: она выбирается в фильтре по зоне,
+   * и в ней же создаются новые районы (если не задана — фильтр «Все зоны»).
+   */
+  initialZoneId?: number
   onSaved: (list: ResList) => void
   onClose: () => void
 }
@@ -17,6 +22,7 @@ const nextId = (list: ResList): number =>
 export const ResEditor = ({
   initialList,
   zonesList,
+  initialZoneId,
   onSaved,
   onClose,
 }: ResEditorProps) => {
@@ -25,6 +31,35 @@ export const ResEditor = ({
   const [error, setError] = useState<string | null>(null)
   const [lastAddedId, setLastAddedId] = useState<number | null>(null)
   const lastRowRef = useRef<HTMLInputElement>(null)
+  /** Фильтр по зоне: null — все зоны (по умолчанию — зона, из которой открыт редактор). */
+  const [filterZoneId, setFilterZoneId] = useState<number | null>(
+    initialZoneId ?? null
+  )
+
+  /** Зона, из которой открыт редактор. */
+  const initialZone = zonesList.find((z) => z.id === initialZoneId) ?? null
+
+  /** Есть ли в этой зоне районы (по текущему, ещё не сохранённому списку). */
+  const hasZoneRes = list.some((res) => res.zoneId === initialZoneId)
+
+  /**
+   * Зона, о которой показываем подсказку «пока нет районов»: та, из которой
+   * открыт редактор. Подсказка видна, только пока эта же зона выбрана в фильтре, —
+   * при смене зоны она исчезает.
+   */
+  const noResHintZone =
+    initialZone && filterZoneId === initialZone.id && !hasZoneRes
+      ? initialZone
+      : null
+
+  /** Районы с учётом фильтра по зоне. */
+  const visibleList =
+    filterZoneId === null
+      ? list
+      : list.filter((res) => res.zoneId === filterZoneId)
+
+  /** Выбран ли фильтр по зоне (для счётчика и пустого состояния). */
+  const filterActive = filterZoneId !== null
 
   const updateName = (id: number, value: string) => {
     setList((prev) =>
@@ -40,7 +75,8 @@ export const ResEditor = ({
 
   const addRow = () => {
     const id = nextId(list)
-    const zoneId = zonesList[0]?.id ?? 0
+    // Новый район относится к зоне, выбранной в фильтре.
+    const zoneId = filterZoneId ?? zonesList[0]?.id ?? 0
     setList((prev) => [...prev, { id, name: '', zoneId }])
     setLastAddedId(id)
   }
@@ -75,17 +111,50 @@ export const ResEditor = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div className="bg-slate-800 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-slate-600">
+        <div className="flex flex-wrap justify-between items-center gap-3 p-4 border-b border-slate-600">
           <h2 className="text-2xl font-bold text-white">
             Редактор районов (РЭС)
           </h2>
-          <button
-            className="text-white bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded"
-            onClick={onClose}
-          >
-            Закрыть
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              htmlFor="res-editor-zone-filter"
+              className="text-lg font-semibold text-white"
+            >
+              Зона:
+            </label>
+            <select
+              id="res-editor-zone-filter"
+              value={filterZoneId ?? ''}
+              onChange={(e) =>
+                setFilterZoneId(
+                  e.target.value === '' ? null : Number(e.target.value)
+                )
+              }
+              className="rounded-lg border border-white/10 bg-slate-700 px-3 py-2 text-lg font-semibold text-white shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Все зоны</option>
+              {zonesList.map((zone) => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.name}
+                </option>
+              ))}
+            </select>
+            <button
+              className="text-white bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded"
+              onClick={onClose}
+            >
+              Закрыть
+            </button>
+          </div>
         </div>
+
+        {noResHintZone && (
+          <div className="bg-amber-500/15 px-4 py-2 text-amber-200 border-b border-slate-600">
+            В зоне «{noResHintZone.name}» пока нет районов электрических сетей.
+            Добавьте район — он будет создан в этой зоне, затем сохраните
+            изменения.
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-600 text-white px-4 py-2">{error}</div>
@@ -96,13 +165,13 @@ export const ResEditor = ({
             <thead className="sticky top-0 bg-slate-800">
               <tr>
                 <th className="p-2 w-16">ID</th>
-                <th className="p-2">Название (name)</th>
-                <th className="p-2">Зона (zoneId)</th>
+                <th className="p-2">Район электрической сети</th>
+                <th className="p-2">Зона ОС ДС ЦУС</th>
                 <th className="p-2 w-24"></th>
               </tr>
             </thead>
             <tbody>
-              {list.map((res) => (
+              {visibleList.map((res) => (
                 <tr
                   key={res.id}
                   className={clsx(
@@ -144,6 +213,13 @@ export const ResEditor = ({
                   </td>
                 </tr>
               ))}
+              {filterActive && visibleList.length === 0 && (
+                <tr>
+                  <td className="p-2 text-slate-400" colSpan={4}>
+                    Ничего не найдено
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -158,6 +234,7 @@ export const ResEditor = ({
           <div className="flex gap-2">
             <span className="text-slate-300 self-center">
               Всего: {list.length}
+              {filterActive && ` · показано: ${visibleList.length}`}
             </span>
             <button
               className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded disabled:opacity-50"

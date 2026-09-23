@@ -38,7 +38,10 @@ function App() {
   const [activePs, setActivePs] = useState<Ps | null>(null)
   const [errorCount, setErrorCount] = useState<number | null>(null)
   const [editorZoneId, setEditorZoneId] = useState<number | null>(null)
-  const [resEditorOpen, setResEditorOpen] = useState(false)
+  /** Редактор районов: null — закрыт; zoneId — зона, к которой относятся новые районы. */
+  const [resEditor, setResEditor] = useState<{ zoneId: number | null } | null>(
+    null
+  )
   const [activeZoneId, setActiveZoneId] = useState<number | null>(null)
   /** Активная подсказка по ПКМ: название ПС, РЭС и координаты курсора. */
   const [hint, setHint] = useState<{
@@ -198,19 +201,29 @@ function App() {
     })
   }
 
-  /** Открывает редактор подстанций для указанной зоны (по умолчанию — активной). */
-  const handleEditPs = (zoneId?: number) => {
-    setEditorZoneId(zoneId ?? activeZoneId)
+  /** Есть ли в зоне хотя бы один РЭС. */
+  const zoneHasRes = (zoneId: number) =>
+    resList.some((res) => res.zoneId === zoneId)
+
+  /** Переход из редактора подстанций в редактор районов (в зоне нет РЭС). */
+  const handleRequestEditRes = (zoneId?: number) => {
+    setResEditor({ zoneId: zoneId ?? null })
   }
 
-  // Данные редактируемой зоны (может отличаться от активной).
-  const editorZone = zonesList.find((z) => z.id === editorZoneId) ?? null
-  const editorZoneRes =
-    editorZoneId === null
-      ? []
-      : resList.filter((r) => r.zoneId === editorZoneId)
-  const editorZoneResIds = new Set(editorZoneRes.map((r) => r.id))
-  const editorZonePs = psDb.filter((ps) => editorZoneResIds.has(ps.resId))
+  /**
+   * Открывает редактор подстанций для указанной зоны (по умолчанию — активной).
+   * Если в зоне нет ни одного РЭС, распределять ПС не по чему — открываем
+   * редактор районов, настроенный на эту зону.
+   */
+  const handleEditPs = (zoneId?: number) => {
+    const id = zoneId ?? activeZoneId
+    if (id === null) return
+    if (!zoneHasRes(id)) {
+      setResEditor({ zoneId: id })
+      return
+    }
+    setEditorZoneId(id)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -260,7 +273,7 @@ function App() {
           setErrorCount(null)
         }}
         onEditPs={handleEditPs}
-        onEditRes={() => setResEditorOpen(true)}
+        onEditRes={() => setResEditor({ zoneId: null })}
         onResetDb={handleResetDb}
         errorCount={errorCount}
         onResetErrors={() => setErrorCount(0)}
@@ -281,27 +294,29 @@ function App() {
       </DndContext>
       {editorZoneId !== null && (
         <PsEditor
-          initialList={editorZonePs}
-          resList={editorZoneRes}
-          zoneName={editorZone?.name ?? ''}
+          initialList={psDb}
+          resList={resList}
+          zonesList={zonesList}
+          zoneId={editorZoneId}
+          onRequestEditRes={handleRequestEditRes}
           onSaved={(list) => {
-            // Сохраняем только ПС редактируемой зоны, остальные не трогаем.
-            const others = psDb.filter((ps) => !editorZoneResIds.has(ps.resId))
-            setPsDb([...others, ...list])
+            // Редактор работает со всем списком ПС, поэтому сохраняем его целиком.
+            setPsDb(list)
             setErrorCount(null)
           }}
           onClose={() => setEditorZoneId(null)}
         />
       )}
-      {resEditorOpen && (
+      {resEditor && (
         <ResEditor
           initialList={resList}
           zonesList={zonesList}
+          initialZoneId={resEditor.zoneId ?? undefined}
           onSaved={(list) => {
             setResList(list)
             setErrorCount(null)
           }}
-          onClose={() => setResEditorOpen(false)}
+          onClose={() => setResEditor(null)}
         />
       )}
       {hint && (
