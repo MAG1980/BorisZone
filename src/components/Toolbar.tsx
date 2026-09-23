@@ -32,7 +32,7 @@ export const Toolbar = ({
   onResetErrors,
 }: Props) => {
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-slate-800/60 p-3 shadow-lg ring-1 ring-white/10">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 rounded-xl bg-slate-800/60 p-3 shadow-lg ring-1 ring-white/10">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap gap-2">
           <ZoneSelect

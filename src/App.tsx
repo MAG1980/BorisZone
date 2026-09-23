@@ -235,7 +235,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="flex items-center gap-3 text-2xl font-semibold text-white">
           <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           Загрузка подстанций…
@@ -246,7 +246,7 @@ function App() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-6 py-4 text-2xl font-semibold text-red-300 shadow-lg">
           Ошибка загрузки: {error.message}
         </div>
@@ -255,7 +255,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <Toolbar
         zonesList={zonesList}
         activeZoneId={activeZoneId}

@@ -9,8 +9,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html,
+body {
+  /* Страница занимает ровно высоту окна: прокрутка документа отключена. */
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
 }

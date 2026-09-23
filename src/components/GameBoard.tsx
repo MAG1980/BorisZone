@@ -23,12 +23,12 @@ export const GameBoard = ({
   onShowHint,
 }: Props) => {
   return (
-    <div className="flex flex-col gap-3 h-[90vh]">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       <DragOverlay>
         {/*Компонент, который отображается в процессе перемещения.*/}
         {activePs ? <PsItem ps={activePs} /> : null}
       </DragOverlay>
-      <div className="flex justify-center flex-wrap text-white p-2 gap-1">
+      <div className="flex min-h-0 flex-1 content-start justify-center flex-wrap gap-1 overflow-auto p-2 text-white">
         {zoneRes.map((res) => (
           <ResColumn
             key={res.id}
@@ -41,7 +41,12 @@ export const GameBoard = ({
         ))}
       </div>
 
-      <Droppable id={'all'} className={'w-full p-2 bg-blue-800 rounded-lg'}>
+      <Droppable
+        id={'all'}
+        className={
+          'max-h-[35%] w-full shrink-0 overflow-auto p-2 bg-blue-800 rounded-lg'
+        }
+      >
         <div className="flex justify-center flex-wrap gap-1">
           {psList.all.map((ps) => (
             <PsItem
