@@ -7,10 +7,20 @@ import { resList as seedRes } from '@/data/resList'
 import { zonesList as seedZones, DEFAULT_ZONE_ID } from '@/data/zonesList'
 
 const DB_NAME = 'boriszone'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const STORE = 'ps'
 const RES_STORE = 'res'
 const ZONE_STORE = 'zones'
+const META_STORE = 'meta'
+
+/**
+ * Версия сид-данных. Увеличивайте при изменении data/psDb.ts,
+ * data/resList.ts или data/zonesList.ts — тогда база автоматически
+ * перезальётся новыми данными при следующем запуске (правки
+ * пользователя будут потеряны — это ожидаемо для смены сида).
+ */
+const SEED_VERSION = 2
+const META_SEED = 'seedVersion'
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -34,6 +44,10 @@ const openDb = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(ZONE_STORE)) {
         db.createObjectStore(ZONE_STORE, { keyPath: 'id' })
       }
+      // Служебная таблица (версия сида и пр.).
+      if (!db.objectStoreNames.contains(META_STORE)) {
+        db.createObjectStore(META_STORE, { keyPath: 'key' })
+      }
     }
 
     request.onsuccess = () => resolve(request.result)
@@ -42,6 +56,29 @@ const openDb = (): Promise<IDBDatabase> => {
 
   return dbPromise
 }
+
+/** Читает служебное значение из meta-таблицы. */
+const getMeta = (db: IDBDatabase, key: string): Promise<number | undefined> =>
+  new Promise((resolve, reject) => {
+    const request = db
+      .transaction(META_STORE, 'readonly')
+      .objectStore(META_STORE)
+      .get(key)
+    request.onsuccess = () => {
+      const res = request.result as { key: string; value: number } | undefined
+      resolve(res?.value)
+    }
+    request.onerror = () => reject(request.error)
+  })
+
+/** Записывает служебное значение в meta-таблицу. */
+const setMeta = (db: IDBDatabase, key: string, value: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const tx = db.transaction(META_STORE, 'readwrite')
+    tx.objectStore(META_STORE).put({ key, value })
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
 
 /** Записывает массив записей в указанный store (перезаписывает по keyPath id). */
 const writeAll = <T>(
@@ -111,17 +148,43 @@ const migrateLegacyRes = (
 }
 
 /**
+ * Проверяет версию сида и при необходимости перезаливает все таблицы
+ * актуальными данными из data/*.ts. Выполняется один раз за запуск.
+ */
+const ensureSeeded = async (db: IDBDatabase): Promise<void> => {
+  const stored = await getMeta(db, META_SEED)
+  if (stored === SEED_VERSION) return
+
+  await clearStore(db, STORE)
+  await writeAll(db, STORE, seed)
+  await clearStore(db, RES_STORE)
+  await writeAll(db, RES_STORE, seedRes)
+  await clearStore(db, ZONE_STORE)
+  await writeAll(db, ZONE_STORE, seedZones)
+  await setMeta(db, META_SEED, SEED_VERSION)
+}
+
+// Единая точка готовности БД: открывает соединение и гарантирует,
+// что сид актуальной версии залит. Все операции идут через getDb().
+let readyPromise: Promise<IDBDatabase> | null = null
+
+const getDb = (): Promise<IDBDatabase> => {
+  if (!readyPromise) {
+    readyPromise = openDb().then(async (db) => {
+      await ensureSeeded(db)
+      return db
+    })
+  }
+  return readyPromise
+}
+
+/**
  * Возвращает список подстанций из IndexedDB.
- * При первом запуске (пустая база) заполняет её сид-данными из data/psDb.ts.
+ * Сид-данные заливаются автоматически (см. ensureSeeded).
  */
 export const getPsList = async (): Promise<PsList> => {
-  const db = await openDb()
+  const db = await getDb()
   const existing = await readAll<Ps>(db, STORE)
-
-  if (existing.length === 0) {
-    await writeAll(db, STORE, seed)
-    return seed
-  }
 
   // Совместимость со старым форматом (resName вместо resId).
   const { list, changed } = migrateLegacyPs(existing)
@@ -134,7 +197,7 @@ export const getPsList = async (): Promise<PsList> => {
 
 /** Полностью перезаписывает базу подстанций. */
 export const savePsList = async (list: PsList): Promise<void> => {
-  const db = await openDb()
+  const db = await getDb()
   await clearStore(db, STORE)
   await writeAll(db, STORE, list)
 }
@@ -144,13 +207,8 @@ export const savePsList = async (list: PsList): Promise<void> => {
  * При первом запуске (пустая таблица) заполняет её сид-данными из data/resList.ts.
  */
 export const getResList = async (): Promise<ResList> => {
-  const db = await openDb()
+  const db = await getDb()
   const existing = await readAll<Res>(db, RES_STORE)
-
-  if (existing.length === 0) {
-    await writeAll(db, RES_STORE, seedRes)
-    return seedRes
-  }
 
   // Совместимость со старым форматом (без zoneId).
   const { list, changed } = migrateLegacyRes(existing)
@@ -163,7 +221,7 @@ export const getResList = async (): Promise<ResList> => {
 
 /** Полностью перезаписывает таблицу РЭС. */
 export const saveResList = async (list: ResList): Promise<void> => {
-  const db = await openDb()
+  const db = await getDb()
   await clearStore(db, RES_STORE)
   await writeAll(db, RES_STORE, list)
 }
@@ -179,20 +237,13 @@ export const resetResDb = async (): Promise<ResList> => {
  * При первом запуске (пустая таблица) заполняет её сид-данными из data/zonesList.ts.
  */
 export const getZonesList = async (): Promise<ZoneList> => {
-  const db = await openDb()
-  const existing = await readAll<Zone>(db, ZONE_STORE)
-
-  if (existing.length === 0) {
-    await writeAll(db, ZONE_STORE, seedZones)
-    return seedZones
-  }
-
-  return existing
+  const db = await getDb()
+  return readAll<Zone>(db, ZONE_STORE)
 }
 
 /** Полностью перезаписывает таблицу зон. */
 export const saveZonesList = async (list: ZoneList): Promise<void> => {
-  const db = await openDb()
+  const db = await getDb()
   await clearStore(db, ZONE_STORE)
   await writeAll(db, ZONE_STORE, list)
 }
@@ -213,7 +264,7 @@ export const resetPsDb = async (): Promise<PsList> => {
 
 /** Одиночная подстанция по id. */
 export const getPsById = async (id: number): Promise<Ps | undefined> => {
-  const db = await openDb()
+  const db = await getDb()
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(id)
     request.onsuccess = () => resolve(request.result as Ps | undefined)
