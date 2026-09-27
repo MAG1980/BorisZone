@@ -14,11 +14,21 @@ interface Props {
 }
 
 /**
- * Компактные стили чипа для мобильных: не шире половины строки (по 2 чипа
- * в ряд), уменьшенный шрифт и перенос длинных слов. На десктопе отключаются.
+ * Стили чипа: базис — доля строки минус половина зазора, поэтому в ряд
+ * всегда помещается целое число чипов без переполнения.
+ * 320–359px — половина строки: 2 чипа в ряд (подписи не рвутся).
+ * От 360px — треть строки: 3 чипа в ряд (≈122px при viewport 425px,
+ * ≈105px в самой узкой колонке РЭС на 768px).
+ * grow дотягивает неполный ряд до краёв. Уменьшенный шрифт и перенос
+ * длинных слов.
+ * В диапазоне 320–767px отступы чипа увеличены до p-2, а высота уменьшена
+ * до min-h-[48px] (на десктопе — p-1 и min-h-[70px]).
+ *
+ * На десктопе (≥768px) ширина не фиксированная 140px, а потолок
+ * md:max-w-[140px] сохраняет прежний вид на широких экранах.
  */
 export const psItemCompactClass =
-  'max-w-[calc(50%_-_0.125rem)] md:max-w-none min-w-0 break-words text-xs md:text-sm'
+  'basis-[calc(50%_-_0.25rem)] min-[360px]:basis-[calc(33.333%_-_0.25rem)] grow min-w-0 break-words text-xs md:text-sm md:w-auto md:max-w-[140px]'
 
 export const PsItem = ({
   ps,
@@ -38,7 +48,7 @@ export const PsItem = ({
   }
 
   const baseStyles = clsx(
-    'flex justify-center items-center text-blue-800 text-pretty p-1 rounded-md w-[140px] min-h-[70px]',
+    'flex justify-center items-center text-blue-800 text-pretty p-2 md:p-1 rounded-md w-[140px] min-h-[48px] md:min-h-[70px]',
     { 'bg-yellow-500': active }
   )
 
