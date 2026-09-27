@@ -28,7 +28,8 @@ export const GameBoard = ({
         {/*Компонент, который отображается в процессе перемещения.*/}
         {activePs ? <PsItem ps={activePs} /> : null}
       </DragOverlay>
-      <div className="flex min-h-0 flex-1 content-start justify-center flex-wrap gap-1 overflow-auto p-2 text-white">
+      {/* Верхний блок (колонки РЭС): растёт по контенту, но делит свободное место с нижним */}
+      <div className="flex min-h-[120px] grow basis-auto content-start justify-center flex-wrap gap-1 overflow-auto p-2 text-white">
         {zoneRes.map((res) => (
           <ResColumn
             key={res.id}
@@ -41,10 +42,11 @@ export const GameBoard = ({
         ))}
       </div>
 
+      {/* Нижний блок (all): тоже grow по контенту — высоты балансируются автоматически */}
       <Droppable
         id={'all'}
         className={
-          'max-h-[35%] w-full shrink-0 overflow-auto p-2 bg-blue-800 rounded-lg'
+          'min-h-[120px] w-full grow basis-auto shrink overflow-auto p-2 bg-blue-800 rounded-lg'
         }
       >
         <div className="flex justify-center flex-wrap gap-1">
