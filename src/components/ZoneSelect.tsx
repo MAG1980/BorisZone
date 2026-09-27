@@ -7,6 +7,8 @@ interface Props {
   activeZoneId: number | null
   onChange: (zoneId: number) => void
   onEditPs: (zoneId: number) => void
+  /** Редактирование недоступно на мобильных — скрывает кнопку редактора ПС. */
+  editEnabled: boolean
 }
 
 /** Кастомный выпадающий список выбора активной зоны. */
@@ -15,6 +17,7 @@ export const ZoneSelect = ({
   activeZoneId,
   onChange,
   onEditPs,
+  editEnabled,
 }: Props) => {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -52,14 +55,14 @@ export const ZoneSelect = ({
   }
 
   return (
-    <div ref={rootRef} className="relative flex">
+    <div ref={rootRef} className="relative flex w-full sm:w-auto">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={clsx(
-          'flex min-w-[17rem] items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-700 px-4 py-2 text-lg font-semibold text-white shadow transition hover:bg-slate-600 focus:outline-none focus:ring-blue-400',
+          'flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-700 px-3 py-2 text-base font-semibold text-white shadow transition hover:bg-slate-600 focus:outline-none focus:ring-blue-400 sm:w-auto sm:min-w-[17rem] sm:px-4 md:text-lg',
           open && 'ring-blue-400'
         )}
       >
@@ -86,7 +89,7 @@ export const ZoneSelect = ({
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 z-20 max-h-72 w-full min-w-[17rem] overflow-auto rounded-lg bg-slate-700 shadow-xl ring-1 ring-white/10"
+          className="absolute left-0 z-20 max-h-72 w-full min-w-0 overflow-auto rounded-lg bg-slate-700 shadow-xl ring-1 ring-white/10 sm:min-w-[17rem]"
         >
           {zonesList.map((zone) => {
             const selected = zone.id === activeZoneId
@@ -102,7 +105,7 @@ export const ZoneSelect = ({
                     type="button"
                     onClick={() => handleSelect(zone.id)}
                     className={clsx(
-                      'flex grow items-center gap-2 px-4 py-4 text-left text-lg font-semibold text-white transition hover:bg-slate-600',
+                      'flex grow items-center gap-2 px-3 py-3 text-left text-base font-semibold text-white transition hover:bg-slate-600 sm:px-4 sm:py-4 md:text-lg',
                       selected && 'text-blue-200'
                     )}
                   >
@@ -122,26 +125,28 @@ export const ZoneSelect = ({
                       />
                     </svg>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(() => onEditPs(zone.id))}
-                    aria-label="Редактор подстанций"
-                    title="Редактор подстанций"
-                    className="mr-1 rounded-md p-2 text-slate-300 transition hover:bg-slate-600 hover:text-white"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      aria-hidden="true"
+                  {editEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(() => onEditPs(zone.id))}
+                      aria-label="Редактор подстанций"
+                      title="Редактор подстанций"
+                      className="mr-1 rounded-md p-2 text-slate-300 transition hover:bg-slate-600 hover:text-white"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 0 1-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 0 1 .947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 0 1 2.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 0 1 2.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 0 1 .947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 0 1-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 0 1-2.287-.947ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 0 1-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 0 1 .947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 0 1 2.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 0 1 2.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 0 1 .947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 0 1-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 0 1-2.287-.947ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </li>
             )
