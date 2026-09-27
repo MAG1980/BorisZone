@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react'
 import type { Ps } from '@/data/types/ps'
 import { useDraggable } from '@dnd-kit/core'
 import { clsx } from 'clsx'
+import { cn } from '@/lib/utils'
 
 interface Props {
   ps: Ps
@@ -11,6 +12,13 @@ interface Props {
   /** Вызывается по ПКМ, чтобы показать подсказку с названием РЭС. */
   onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
+
+/**
+ * Компактные стили чипа для мобильных: не шире половины строки (по 2 чипа
+ * в ряд), уменьшенный шрифт и перенос длинных слов. На десктопе отключаются.
+ */
+export const psItemCompactClass =
+  'max-w-[calc(50%_-_0.125rem)] md:max-w-none min-w-0 break-words text-xs md:text-sm'
 
 export const PsItem = ({
   ps,
@@ -39,7 +47,7 @@ export const PsItem = ({
     danger: 'bg-red-500 text-white',
     success: 'bg-teal-500 text-white',
   }
-  const classes = clsx('text-sm', baseStyles, variants[variant], className)
+  const classes = cn('text-sm', baseStyles, variants[variant], className)
 
   return (
     <div

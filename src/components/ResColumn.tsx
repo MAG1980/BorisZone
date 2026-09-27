@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react'
 import { clsx } from 'clsx'
 import { Droppable } from './Droppable.tsx'
-import { PsItem } from './PsItem.tsx'
+import { PsItem, psItemCompactClass } from './PsItem.tsx'
 import type { Res } from '@/data/types/res'
 import type { Ps } from '@/data/types/ps'
 
@@ -13,7 +13,7 @@ interface Props {
   onShowHint?: (ps: Ps, e: MouseEvent) => void
 }
 
-/** Колонка одного РЭС: заголовок и зона для перетаскивания подстанций. */
+/** Колонка одного РЭС: заголовок и зона для перетаскивания подстанций. Ширина — 50% строки, но не более 460px: на узких экранах (в т.ч. 768px) всегда по 2 колонки в ряд, на широких — по 460px с переносом. */
 export const ResColumn = ({
   res,
   psList,
@@ -29,7 +29,7 @@ export const ResColumn = ({
   return (
     <div
       className={clsx(
-        'flex flex-col w-[460px] bg-blue-500 rounded-lg p-3 gap-2',
+        'flex flex-col w-[calc(50%_-_0.125rem)] max-w-[460px] bg-blue-500 rounded-lg p-3 gap-2',
         matches && 'bg-teal-500'
       )}
     >
@@ -37,7 +37,7 @@ export const ResColumn = ({
         {res.name}
       </div>
       <Droppable id={String(res.id)} className={'grow p-1 rounded-lg bg-white'}>
-        <div className="flex flex-wrap gap-1  rounded-lg  ">
+        <div className="flex flex-wrap justify-center gap-1 rounded-lg">
           {psList.map((ps) => (
             <PsItem
               key={ps.id}
@@ -45,6 +45,7 @@ export const ResColumn = ({
               variant={ps.resId === res.id ? 'success' : 'danger'}
               active={ps.id === activePsId}
               onShowHint={onShowHint}
+              className={psItemCompactClass}
             />
           ))}
         </div>

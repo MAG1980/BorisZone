@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react'
 import { DragOverlay } from '@dnd-kit/core'
 import { Droppable } from './Droppable.tsx'
-import { PsItem } from './PsItem.tsx'
+import { PsItem, psItemCompactClass } from './PsItem.tsx'
 import { ResColumn } from './ResColumn.tsx'
 import type { Ps } from '@/data/types/ps'
 import type { ResList } from '@/data/types/res'
@@ -56,6 +56,7 @@ export const GameBoard = ({
               ps={ps}
               active={ps.id === activePs?.id}
               onShowHint={onShowHint}
+              className={psItemCompactClass}
             />
           ))}
         </div>

@@ -22,7 +22,10 @@ interface Props {
 const actionBtnClass =
   'rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95 sm:px-4 sm:text-base md:text-lg'
 
-/** Верхняя панель: выбор зоны, действия, меню редактирования, счётчик ошибок и подсказка. */
+/**
+ * Верхняя панель: выбор зоны, действия, меню редактирования, счётчик ошибок и подсказка.
+ * На мобильных телефонах не отображается.
+ */
 export const Toolbar = ({
   zonesList,
   activeZoneId,
@@ -36,8 +39,11 @@ export const Toolbar = ({
   errorCount,
   onResetErrors,
 }: Props) => {
-  // На мобильных устройствах редактирование недоступно — скрываем кнопки.
   const isMobile = useIsMobile()
+
+  // На мобильных телефонах тулбар не отображается — редактирование и
+  // прочие действия недоступны в принципе.
+  if (isMobile) return null
 
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-800/60 p-2 shadow-lg ring-1 ring-white/10 sm:gap-4 sm:p-3">
