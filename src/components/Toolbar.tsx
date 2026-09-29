@@ -2,6 +2,7 @@ import { ZoneSelect } from './ZoneSelect.tsx'
 import { EditMenu } from './EditMenu.tsx'
 import { ErrorCounter } from './ErrorCounter.tsx'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { actionBtnClass } from '@/lib/uiClasses'
 import type { ZoneList } from '@/data/types/zone'
 
 interface Props {
@@ -17,10 +18,6 @@ interface Props {
   errorCount: number | null
   onResetErrors: () => void
 }
-
-/** Общая адаптивная стилизация кнопок действия в тулбаре. */
-const actionBtnClass =
-  'rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95 sm:px-4 sm:text-base md:text-lg'
 
 /**
  * Верхняя панель: выбор зоны, действия, меню редактирования, счётчик ошибок и подсказка.

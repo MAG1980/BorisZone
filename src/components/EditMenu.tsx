@@ -1,10 +1,18 @@
 import { useRef } from 'react'
+import { actionBtnClass, actionBtnDangerClass } from '@/lib/uiClasses'
+import { cn } from '@/lib/utils'
 
 interface Props {
   onEditPs: () => void
   onEditRes: () => void
   onResetDb: () => void
 }
+
+/** Пункт меню: геометрия кнопки тулбара, выравнивание по левому краю. */
+const itemClass = cn('w-full text-left', actionBtnClass)
+
+/** Пункт «Сброс» — та же геометрия, но красный (cn снимает конфликт bg-*). */
+const dangerItemClass = cn('w-full text-left', actionBtnDangerClass)
 
 /** Выпадающее меню «Редактировать» на базе <details>. Закрывается после выбора пункта. */
 export const EditMenu = ({ onEditPs, onEditRes, onResetDb }: Props) => {
@@ -17,26 +25,20 @@ export const EditMenu = ({ onEditPs, onEditRes, onResetDb }: Props) => {
 
   return (
     <details ref={ref} className="relative">
-      <summary className="text-3xl font-bold text-white bg-teal-600 px-4 py-3 rounded cursor-pointer list-none select-none">
+      {/* Кнопка оформлена как остальные кнопки тулбара (actionBtnClass). */}
+      <summary
+        className={cn('cursor-pointer list-none select-none', actionBtnClass)}
+      >
         Редактировать
       </summary>
-      <div className="absolute z-10 flex flex-col bg-teal-600 rounded mt-1 overflow-hidden shadow-lg">
-        <button
-          className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
-          onClick={() => handle(onEditPs)}
-        >
+      <div className="absolute left-0 z-20 mt-2 flex min-w-full flex-col gap-2 rounded-lg border border-white/10 bg-slate-800 p-2 shadow-xl">
+        <button className={itemClass} onClick={() => handle(onEditPs)}>
           Подстанции
         </button>
-        <button
-          className="text-3xl font-bold text-white px-4 py-3 text-left hover:bg-teal-700"
-          onClick={() => handle(onEditRes)}
-        >
+        <button className={itemClass} onClick={() => handle(onEditRes)}>
           Районы
         </button>
-        <button
-          className="text-3xl font-bold text-white bg-red-600 px-4 py-3 text-left hover:bg-red-700"
-          onClick={() => handle(onResetDb)}
-        >
+        <button className={dangerItemClass} onClick={() => handle(onResetDb)}>
           Сброс
         </button>
       </div>

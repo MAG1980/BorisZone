@@ -21,17 +21,18 @@ export const resList: ResList = [
   { id: 10, name: 'Каменский', zoneId: 1 },
   { id: 11, name: 'Кантемировский', zoneId: 1 },
   { id: 12, name: 'Лискинский', zoneId: 1 },
-  { id: 13, name: 'Каширский (Лискинский)', zoneId: 1 },
+  { id: 13, name: 'Каширский', zoneId: 1 },
   { id: 14, name: 'Ольховатский', zoneId: 1 },
   { id: 15, name: 'Острогожский', zoneId: 1 },
   { id: 16, name: 'Россошанский', zoneId: 1 },
   { id: 17, name: 'Подгоренский', zoneId: 1 },
   { id: 18, name: 'Нововоронежский', zoneId: 1 },
+  { id: 36, name: 'Каширский', zoneId: 1 },
 
   // ── zoneId 2: Воронежская зона ──
-  { id: 19, name: 'Воронежский', zoneId: 2 },
+  { id: 19, name: 'ВУ СПС', zoneId: 2 },
   { id: 20, name: 'Верхнехавский', zoneId: 2 },
-  { id: 21, name: 'Каширский (Воронежский)', zoneId: 2 },
+  { id: 21, name: 'Каширский', zoneId: 2 },
   { id: 22, name: 'Нижнедевицкий', zoneId: 2 },
   { id: 23, name: 'Новоусманский', zoneId: 2 },
   { id: 24, name: 'Панинский', zoneId: 2 },
@@ -39,6 +40,7 @@ export const resList: ResList = [
   { id: 26, name: 'Репьевский', zoneId: 2 },
   { id: 27, name: 'Семилукский', zoneId: 2 },
   { id: 28, name: 'Хохольский', zoneId: 2 },
+  { id: 37, name: 'Нововоронежский', zoneId: 2 },
 
   // ── zoneId 4: Калачеевская зона ──
   { id: 29, name: 'Богучарский', zoneId: 4 },
