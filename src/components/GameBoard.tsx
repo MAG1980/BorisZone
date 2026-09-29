@@ -33,13 +33,14 @@ export const GameBoard = ({
           колонки. На мобильных 3 колонки в ряд, от 768px — md:grid-cols-2:
           2 колонки шириной до 460px, для чего блок просит 940px (2 × 460px +
           gap-1 + p-2) и сжимается только при нехватке места — справа размещается
-          список подстанций (md:flex-row у контейнера поля). От 768px добавлен
-          md:items-start — колонки не растягиваются по самой высокой в строке,
-          и высота каждой ResColumn зависит только от её содержимого. От 768px
-          блок занимает всю высоту строки и прокручивается внутри себя
-          (md:overflow-y-auto): если РЭС в зоне больше, чем помещается по высоте,
-          нижние ряды не обрезаются, а доступны через прокрутку. */}
-      <div className="grid grid-cols-3 auto-rows-min grow-0 shrink-0 basis-auto gap-1 p-2 text-white md:basis-[940px] md:shrink md:grid-cols-2 md:items-start md:overflow-y-auto">
+          список подстанций (md:flex-row у контейнера поля). От 768px колонки
+          выравниваются по высоте соседа по строке (выравнивание по умолчанию,
+          align-items: stretch), поэтому в ряду нет «рваного» низа: низкая
+          ResColumn добирает высоту до самой высокой. От 768px блок занимает всю
+          высоту строки и прокручивается внутри себя (md:overflow-y-auto): если РЭС
+          в зоне больше, чем помещается по высоте, нижние ряды не обрезаются,
+          а доступны через прокрутку. */}
+      <div className="grid grid-cols-3 auto-rows-min grow-0 shrink-0 basis-auto gap-1 p-2 text-white md:basis-[940px] md:shrink md:grid-cols-2 md:overflow-y-auto">
         {zoneRes.map((res) => (
           <ResColumn
             key={res.id}
