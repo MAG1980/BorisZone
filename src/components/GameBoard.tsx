@@ -23,17 +23,23 @@ export const GameBoard = ({
   onShowHint,
 }: Props) => {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-row">
       <DragOverlay>
-        {/*Компонент, который отображается в процессе перемещения.*/}
+        {/*Компонент, который отображается в процессе перетаскивания.*/}
         {activePs ? <PsItem ps={activePs} /> : null}
       </DragOverlay>
-      {/* Верхний блок (колонки РЭС) на любом разрешении показывается без прокрутки:
-          высота строго по контенту (строки = высоте колонки), блок не растягивается
-          (grow-0) и не сжимается (shrink-0), поэтому все РЭС зоны видны сразу
-          и на мобильных (сетка 3 в ряд), и на десктопе (2 колонки с переносом).
-          Лишнюю высоту забирает нижний блок подстанций — он со своей прокруткой. */}
-      <div className="grid grid-cols-3 auto-rows-min md:auto-rows-auto grow-0 shrink-0 basis-auto justify-center flex-wrap gap-1 p-2 text-white md:min-h-[120px] md:flex">
+      {/* Блок РЭС — grid на любом разрешении: высота строк всегда по контенту
+          (auto-rows-min), поэтому блок занимает ровно столько, сколько занимают
+          колонки. На мобильных 3 колонки в ряд, от 768px — md:grid-cols-2:
+          2 колонки шириной до 460px, для чего блок просит 940px (2 × 460px +
+          gap-1 + p-2) и сжимается только при нехватке места — справа размещается
+          список подстанций (md:flex-row у контейнера поля). От 768px добавлен
+          md:items-start — колонки не растягиваются по самой высокой в строке,
+          и высота каждой ResColumn зависит только от её содержимого. От 768px
+          блок занимает всю высоту строки и прокручивается внутри себя
+          (md:overflow-y-auto): если РЭС в зоне больше, чем помещается по высоте,
+          нижние ряды не обрезаются, а доступны через прокрутку. */}
+      <div className="grid grid-cols-3 auto-rows-min grow-0 shrink-0 basis-auto gap-1 p-2 text-white md:basis-[940px] md:shrink md:grid-cols-2 md:items-start md:overflow-y-auto">
         {zoneRes.map((res) => (
           <ResColumn
             key={res.id}
@@ -46,13 +52,16 @@ export const GameBoard = ({
         ))}
       </div>
 
-      {/* Нижний блок (all): забирает всю высоту, оставшуюся после блока РЭС,
-          поэтому список подстанций сжимается первым и прокручивается внутри себя —
-          блок РЭС при этом всегда виден целиком. */}
+      {/* Список подстанций (все ПС зоны). На мобильных — под блоком РЭС и
+          забирает остаток высоты, поэтому сжимается первым и прокручивается
+          внутри себя, а блок РЭС всегда виден целиком. От 768px — справа от
+          блока РЭС: держит минимум 22rem (md:basis-[22rem] + md:shrink-0) и
+          добирает всю ширину, оставшуюся после блока РЭС; высоту берёт по
+          строке и прокручивает содержимое внутри себя. */}
       <Droppable
         id={'all'}
         className={
-          'min-h-0 w-full grow basis-auto shrink overflow-auto p-2 bg-blue-800 rounded-lg'
+          'min-h-0 w-full grow basis-auto shrink overflow-auto p-2 bg-blue-800 rounded-lg md:shrink-0 md:basis-[22rem]'
         }
       >
         <div className="flex justify-center flex-wrap gap-1">
