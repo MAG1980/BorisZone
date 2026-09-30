@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react'
-import { clsx } from 'clsx'
 import { useIsMobile } from '@/lib/useIsMobile'
+import { cn } from '@/lib/utils'
 import { Droppable } from './Droppable.tsx'
 import { PsItem, psItemCompactClass } from './PsItem.tsx'
 import type { Res } from '@/data/types/res'
@@ -29,11 +29,17 @@ export const ResColumn = ({
     psList.length === answers.length &&
     psList.every((ps) => answers.includes(ps))
 
+  /** В колонке лежит ПС из чужого РЭС (до 768px это видно только по цвету колонки). */
+  const hasForeign = psList.some((ps) => ps.resId !== res.id)
+
   return (
     <div
-      className={clsx(
+      className={cn(
         'flex flex-col min-h-[48px] md:min-h-[70px] overflow-hidden bg-blue-500 rounded-lg p-2 gap-2 md:p-3',
-        matches && 'bg-teal-500'
+        matches && 'bg-teal-500',
+        // На мобильных (<768px) чипы внутри колонки скрыты вместе с зоной дропа,
+        // поэтому о неправильно расставленных ПС сообщает цвет самой колонки.
+        isMobile && hasForeign && 'bg-red-500'
       )}
     >
       <div className="flex min-h-0 justify-center items-center overflow-hidden px-1 py-1 text-[10px] leading-tight break-words text-center md:px-2 md:py-3 md:text-base">
