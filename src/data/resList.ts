@@ -27,7 +27,6 @@ export const resList: ResList = [
   { id: 16, name: 'Россошанский', zoneId: 1 },
   { id: 17, name: 'Подгоренский', zoneId: 1 },
   { id: 18, name: 'Нововоронежский', zoneId: 1 },
-  { id: 36, name: 'Каширский', zoneId: 1 },
 
   // ── zoneId 2: Воронежская зона ──
   { id: 19, name: 'ВУ СПС', zoneId: 2 },
