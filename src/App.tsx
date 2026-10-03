@@ -264,16 +264,23 @@ function App() {
     )
   }
 
+  const onShuffle = () => {
+    shufflePsSimple(zonePs)
+    setErrorCount(null)
+  }
+
+  const onResetErrors = () => {
+    setErrorCount(0)
+    onShuffle()
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <Toolbar
         zonesList={zonesList}
         activeZoneId={activeZoneId}
         onZoneChange={setActiveZoneId}
-        onShuffle={() => {
-          shufflePsSimple(zonePs)
-          setErrorCount(null)
-        }}
+        onShuffle={onShuffle}
         onOrder={() => {
           setPsList({ all: zonePs })
           setErrorCount(null)
@@ -288,7 +295,7 @@ function App() {
         onStartQuiz={handleStartQuiz}
         quizDisabled={!zonePs.length}
         errorCount={errorCount}
-        onResetErrors={() => setErrorCount(0)}
+        onResetErrors={onResetErrors}
       />
       <DndContext
         collisionDetection={rectIntersection}
