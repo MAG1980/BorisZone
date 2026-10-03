@@ -3,15 +3,19 @@ import { actionBtnClass } from '@/lib/uiClasses'
 import { cn } from '@/lib/utils'
 
 interface Props {
-  /** Всего вопросов в викторине. */
+  /** Сколько всего вопросов (ПС) в зоне. */
   total: number
-  /** Правильных ответов. */
-  correctCount: number
+  /** Сколько кругов потребовалось, чтобы пройти викторину без ошибок. */
+  rounds: number
+  /** Всего неверных ответов за викторину (с учётом повторов). */
+  wrongCount: number
+  /** Сколько ПС ошибались хотя бы раз. */
+  everWrongCount: number
   onRestart: () => void
   onClose: () => void
 }
 
-/** Оценка результата: цвет и текст зависят от доли правильных ответов. */
+/** Оценка результата: цвет и текст зависят от доли ответов без ошибок. */
 const verdict = (percent: number) => {
   if (percent === 100) {
     return { text: 'ни одной ошибки', className: 'text-teal-300' }
@@ -25,23 +29,40 @@ const verdict = (percent: number) => {
   return { text: 'стоит повторить районы зоны', className: 'text-red-300' }
 }
 
-/** Итоговый экран викторины: счёт, процент и кнопки перезапуска/закрытия. */
+/** Итоговый экран: круги, ошибки и доля верных ответов с первого раза. */
 export const QuizSummary = ({
   total,
-  correctCount,
+  rounds,
+  wrongCount,
+  everWrongCount,
   onRestart,
   onClose,
 }: Props) => {
-  const percent = scorePercent(correctCount, total)
+  const firstTry = Math.max(total - everWrongCount, 0)
+  const percent = scorePercent(firstTry, total)
   const { text, className } = verdict(percent)
+
+  /** Строка статистики: подпись — значение. */
+  const stats = [
+    { label: 'Кругов', value: String(rounds) },
+    { label: 'Ошибок всего', value: String(wrongCount) },
+    {
+      label: 'Верно с первого раза',
+      value: `${firstTry} из ${total} (${percent}%)`,
+    },
+  ]
 
   return (
     <div className="flex grow flex-col items-center justify-center gap-4 p-6">
       <h3 className="text-2xl font-bold text-white">Викторина пройдена</h3>
-      <p className="text-5xl font-bold text-white">
-        {correctCount}
-        <span className="text-slate-400"> / {total}</span>
-      </p>
+      <dl className="flex flex-col gap-1 text-lg">
+        {stats.map(({ label, value }) => (
+          <div key={label} className="flex justify-between gap-6">
+            <dt className="text-slate-300">{label}:</dt>
+            <dd className="font-semibold text-white">{value}</dd>
+          </div>
+        ))}
+      </dl>
       <p className={cn('text-xl font-semibold', className)}>
         {percent}% верных ответов — {text}
       </p>

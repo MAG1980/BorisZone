@@ -13,38 +13,65 @@ export interface QuizQuestion {
 }
 
 /**
- * Состояние викторины. Дискриминированный union: пока идут вопросы,
- * известен текущий индекс и выбранный на нём ответ; после последнего
- * вопроса состояние переключается на `finished`.
+ * Состояние викторины. Викторина идёт кругами: первый круг — все ПС зоны,
+ * каждый следующий — только вопросы, отвеченные неверно в предыдущем круге.
+ * `question` — идёт круг; `intermediate` — круг закрыт, но остались ошибки;
+ * `finished` — круг закрыт без ошибок (викторина пройдена).
  */
 export type QuizState =
   | {
       kind: 'question'
+      /** Номер круга, начиная с 1. */
+      round: number
+      /** Вопросы текущего круга в порядке показа. */
       questions: QuizQuestion[]
       /** Индекс текущего вопроса. */
       index: number
-      /** Выбранный ответ на текущем вопросе; null — ответ ещё не дан. */
+      /** Ответ на текущий вопрос; null — ответ ещё не дан. */
       chosenResId: number | null
-      correctCount: number
+      /** Промахи текущего круга — из них собирается следующий круг. */
+      pending: QuizQuestion[]
+      /** id ПС, в которых ошибались хотя бы раз за викторину. */
+      everWrongIds: number[]
+      /** Всего неверных ответов за викторину (с учётом повторов). */
+      wrongCount: number
+    }
+  | {
+      kind: 'intermediate'
+      /** Номер только что пройденного круга. */
+      round: number
+      pending: QuizQuestion[]
+      everWrongIds: number[]
+      wrongCount: number
     }
   | {
       kind: 'finished'
-      questions: QuizQuestion[]
-      correctCount: number
+      /** Сколько кругов потребовалось, чтобы пройти без ошибок. */
+      rounds: number
+      everWrongIds: number[]
+      wrongCount: number
     }
 
+/**
+ * Действия викторины. Перемешивание живёт вне редьюсера (он остаётся чистым):
+ * список вопросов для нового круга приходит в действии уже перемешанным.
+ */
 export type QuizAction =
   | { type: 'answer'; resId: number }
   | { type: 'next' }
-  | { type: 'restart' }
+  | { type: 'continue'; questions: QuizQuestion[] }
+  | { type: 'restart'; questions: QuizQuestion[] }
 
-/** Начальное состояние: вопросы в переданном порядке, активен первый. */
+/** Начальное состояние: первый круг из переданных вопросов. */
 export const createQuizState = (questions: QuizQuestion[]): QuizState => ({
   kind: 'question',
+  round: 1,
   questions,
   index: 0,
   chosenResId: null,
-  correctCount: 0,
+  pending: [],
+  everWrongIds: [],
+  wrongCount: 0,
 })
 
 /** Собирает вопросы по ПС зоны, перемешивая порядок подстанций. */
@@ -65,9 +92,12 @@ export const buildQuizQuestions = (
 /**
  * Редьюсер викторины.
  * `answer` — фиксирует выбранный вариант (повторный ответ на тот же вопрос
- * игнорируется, чтобы счёт нельзя было накрутить);
- * `next` — переходит к следующему вопросу или завершает викторину;
- * `restart` — начинает заново с теми же вопросами в новом порядке.
+ * игнорируется, чтобы счёт нельзя было накрутить), при промахе пополняет
+ * список вопросов на повтор и счётчик ошибок;
+ * `next` — переходит к следующему вопросу, а когда круг закончился —
+ * показывает итог круга (`intermediate`) либо завершает викторину (`finished`);
+ * `continue` — начинает следующий круг по вопросам с промахами;
+ * `restart` — начинает викторину заново с полного списка.
  */
 export const quizReducer = (
   state: QuizState,
@@ -76,34 +106,70 @@ export const quizReducer = (
   switch (action.type) {
     case 'answer': {
       if (state.kind !== 'question' || state.chosenResId !== null) return state
-      const correct = state.questions[state.index].resId === action.resId
+      const question = state.questions[state.index]
+      if (question.resId === action.resId) {
+        return { ...state, chosenResId: action.resId }
+      }
       return {
         ...state,
         chosenResId: action.resId,
-        correctCount: correct ? state.correctCount + 1 : state.correctCount,
+        pending: [...state.pending, question],
+        everWrongIds: state.everWrongIds.includes(question.psId)
+          ? state.everWrongIds
+          : [...state.everWrongIds, question.psId],
+        wrongCount: state.wrongCount + 1,
       }
     }
     case 'next': {
       if (state.kind !== 'question' || state.chosenResId === null) return state
       const nextIndex = state.index + 1
-      if (nextIndex >= state.questions.length) {
+      if (nextIndex < state.questions.length) {
+        return { ...state, index: nextIndex, chosenResId: null }
+      }
+      // Круг закрыт: без промахов — викторина пройдена, иначе — повтор.
+      if (state.pending.length === 0) {
         return {
           kind: 'finished',
-          questions: state.questions,
-          correctCount: state.correctCount,
+          rounds: state.round,
+          everWrongIds: state.everWrongIds,
+          wrongCount: state.wrongCount,
         }
       }
-      return { ...state, index: nextIndex, chosenResId: null }
+      return {
+        kind: 'intermediate',
+        round: state.round,
+        pending: state.pending,
+        everWrongIds: state.everWrongIds,
+        wrongCount: state.wrongCount,
+      }
+    }
+    case 'continue': {
+      // Пустой круг повторов не запускаем: завершать викторину — задача `next`.
+      if (state.kind !== 'intermediate' || action.questions.length === 0) {
+        return state
+      }
+      return {
+        kind: 'question',
+        round: state.round + 1,
+        questions: action.questions,
+        index: 0,
+        chosenResId: null,
+        pending: [],
+        everWrongIds: state.everWrongIds,
+        wrongCount: state.wrongCount,
+      }
     }
     case 'restart':
-      return createQuizState(shuffleArray(state.questions))
+      return createQuizState(action.questions)
   }
 }
 
-/** Текущий вопрос; null — викторина завершена. */
-export const currentQuestion = (state: QuizState): QuizQuestion | null =>
-  state.kind === 'question' ? state.questions[state.index] : null
+/** Верен ли уже выбранный ответ на текущий вопрос (для автоперехода дальше). */
+export const currentAnswerIsCorrect = (state: QuizState): boolean =>
+  state.kind === 'question' &&
+  state.chosenResId !== null &&
+  state.questions[state.index].resId === state.chosenResId
 
-/** Доля правильных ответов в процентах (0–100). */
-export const scorePercent = (correctCount: number, total: number): number =>
-  total === 0 ? 0 : Math.round((correctCount / total) * 100)
+/** Доля части от целого в процентах (0–100). */
+export const scorePercent = (part: number, total: number): number =>
+  total === 0 ? 0 : Math.round((part / total) * 100)

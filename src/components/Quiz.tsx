@@ -2,18 +2,24 @@ import { useEffect, useReducer } from 'react'
 import type { ResList } from '@/data/types/res'
 import {
   createQuizState,
-  currentQuestion,
+  currentAnswerIsCorrect,
   quizReducer,
   type QuizQuestion,
 } from '@/lib/quiz'
+import { shuffleArray } from '@/lib/shuffle'
 import { actionBtnClass } from '@/lib/uiClasses'
 import { cn } from '@/lib/utils'
+import { QuizBreak } from './QuizBreak.tsx'
+import { QuizQuestionView } from './QuizQuestion.tsx'
 import { QuizSummary } from './QuizSummary.tsx'
+
+/** Пауза перед автопереходом — чтобы пользователь увидел зелёный отклик. */
+const CORRECT_ADVANCE_MS = 500
 
 interface Props {
   /** Название активной зоны — показывается в шапке. */
   zoneName: string
-  /** Перемешанные ПС активной зоны (см. buildQuizQuestions). */
+  /** Все ПС активной зоны (список приходит уже перемешанным из App). */
   questions: QuizQuestion[]
   /** РЭС активной зоны — варианты ответа. */
   resOptions: ResList
@@ -22,9 +28,10 @@ interface Props {
 
 /**
  * Викторина в пределах активной зоны: показывается подстанция, нужно выбрать
- * её район из кнопок со всеми РЭС зоны. Ответ проверяется сразу, после
- * последнего вопроса выводится результат. Игровое поле и счётчик ошибок
- * викторина не трогает — у неё собственный протокол.
+ * её район из кнопок со всеми РЭС зоны. Верный ответ уводит к следующему
+ * вопросу автоматически, промах — по кнопке «Далее». Вопросы, где были
+ * ошибки, повторяются кругами, пока весь круг не пройдёт без ошибок.
+ * Игровое поле и счётчик ошибок игры викторина не трогает — у неё свой счёт.
  */
 export const Quiz = ({ zoneName, questions, resOptions, onClose }: Props) => {
   const [state, dispatch] = useReducer(quizReducer, questions, createQuizState)
@@ -38,29 +45,30 @@ export const Quiz = ({ zoneName, questions, resOptions, onClose }: Props) => {
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
 
-  const question = currentQuestion(state)
-  const total = state.questions.length
-  const answered = state.kind === 'question' && state.chosenResId !== null
-  const chosenResId = state.kind === 'question' ? state.chosenResId : null
-  const isCorrect =
-    answered && question !== null && question.resId === chosenResId
-  const isLast = state.kind === 'question' && state.index === total - 1
+  // Верный ответ не требует нажатия «Далее»: ждём короткую паузу и переходим
+  // сами. Пока ответ не выбран или он неверный — таймер не запускается.
+  const advanceAfterCorrect = currentAnswerIsCorrect(state)
+  useEffect(() => {
+    if (!advanceAfterCorrect) return
+    const timer = window.setTimeout(
+      () => dispatch({ type: 'next' }),
+      CORRECT_ADVANCE_MS
+    )
+    return () => window.clearTimeout(timer)
+  }, [advanceAfterCorrect])
 
-  /** Прогресс в шапке: номер текущего вопроса или итоговая длина. */
+  /** Прогресс в шапке: круг и номер вопроса, итог круга или число кругов. */
   const progressLabel =
     state.kind === 'question'
-      ? `Вопрос ${state.index + 1} из ${total}`
-      : `Вопросов: ${total}`
-
-  /** Подпись под вариантами: пока не отвечено — приглашение, после — разбор. */
-  const feedback = !answered
-    ? { text: 'Выберите район', className: 'text-slate-300' }
-    : isCorrect
-      ? { text: 'Верно!', className: 'text-teal-300' }
-      : {
-          text: `Неверно. Правильный ответ: ${question?.resName ?? ''}`,
-          className: 'text-red-300',
-        }
+      ? [
+          state.round > 1 ? `Круг ${state.round}` : null,
+          `Вопрос ${state.index + 1} из ${state.questions.length}`,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : state.kind === 'intermediate'
+        ? `Круг ${state.round} пройден`
+        : `Кругов: ${state.rounds}`
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -70,7 +78,14 @@ export const Quiz = ({ zoneName, questions, resOptions, onClose }: Props) => {
             <h2 className="text-2xl font-bold text-white">Викторина</h2>
             <p className="text-sm text-slate-300">{zoneName}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Счётчик неправильных ответов за викторину (как ErrorCounter игры). */}
+            <span className="text-sm font-bold text-white md:text-base">
+              Ошибки:
+              <span className="ml-1 rounded-full bg-white px-2 py-1 text-base text-red-500">
+                {state.wrongCount}
+              </span>
+            </span>
             <span className="text-lg font-semibold text-white">
               {progressLabel}
             </span>
@@ -83,65 +98,41 @@ export const Quiz = ({ zoneName, questions, resOptions, onClose }: Props) => {
           </div>
         </div>
 
-        {state.kind === 'finished' || question === null ? (
-          <QuizSummary
-            total={total}
-            correctCount={state.correctCount}
-            onRestart={() => dispatch({ type: 'restart' })}
+        {state.kind === 'question' && (
+          <QuizQuestionView
+            question={state.questions[state.index]}
+            resOptions={resOptions}
+            chosenResId={state.chosenResId}
+            onAnswer={(resId) => dispatch({ type: 'answer', resId })}
+            onNext={() => dispatch({ type: 'next' })}
+          />
+        )}
+
+        {state.kind === 'intermediate' && (
+          <QuizBreak
+            round={state.round}
+            pendingCount={state.pending.length}
+            onContinue={() =>
+              dispatch({
+                type: 'continue',
+                questions: shuffleArray(state.pending),
+              })
+            }
             onClose={onClose}
           />
-        ) : (
-          <>
-            <div className="grow overflow-auto p-4 text-left">
-              <p className="text-sm font-semibold tracking-wide text-slate-400 uppercase">
-                К какому РЭС относится подстанция?
-              </p>
-              <p className="mt-2 text-2xl font-bold text-white md:text-3xl">
-                {question.psName}
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
-                {resOptions.map((res) => {
-                  const isChosen = chosenResId === res.id
-                  const isRight = answered && res.id === question.resId
-                  return (
-                    <button
-                      key={res.id}
-                      type="button"
-                      disabled={answered}
-                      onClick={() =>
-                        dispatch({ type: 'answer', resId: res.id })
-                      }
-                      className={cn(
-                        actionBtnClass,
-                        'w-full',
-                        isRight && 'bg-teal-600 hover:bg-teal-600',
-                        isChosen && !isRight && 'bg-red-600 hover:bg-red-600',
-                        answered && !isRight && !isChosen && 'opacity-50'
-                      )}
-                    >
-                      {res.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+        )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-600 p-4">
-              <p className={cn('text-lg font-semibold', feedback.className)}>
-                {feedback.text}
-              </p>
-              <button
-                className={cn(
-                  actionBtnClass,
-                  'disabled:cursor-not-allowed disabled:opacity-50'
-                )}
-                disabled={!answered}
-                onClick={() => dispatch({ type: 'next' })}
-              >
-                {isLast ? 'Результат' : 'Далее'}
-              </button>
-            </div>
-          </>
+        {state.kind === 'finished' && (
+          <QuizSummary
+            total={questions.length}
+            rounds={state.rounds}
+            wrongCount={state.wrongCount}
+            everWrongCount={state.everWrongIds.length}
+            onRestart={() =>
+              dispatch({ type: 'restart', questions: shuffleArray(questions) })
+            }
+            onClose={onClose}
+          />
         )}
       </div>
     </div>
