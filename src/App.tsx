@@ -15,11 +15,14 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import type { Ps } from './data/types/ps'
 import { usePsDb } from './lib/usePsDb'
 import { getResList, resetPsDb } from './lib/psDb'
+import { shuffleArray } from './lib/shuffle'
+import { buildQuizQuestions, type QuizQuestion } from './lib/quiz'
 import { PsEditor } from './components/PsEditor.tsx'
 import { ResEditor } from './components/ResEditor.tsx'
 import { Toolbar } from './components/Toolbar.tsx'
 import { GameBoard } from './components/GameBoard.tsx'
 import { PsHint } from './components/PsHint.tsx'
+import { Quiz } from './components/Quiz.tsx'
 
 interface Answers {
   [key: string]: Ps[]
@@ -50,6 +53,10 @@ function App() {
     x: number
     y: number
   } | null>(null)
+  /** Вопросы открытой викторины; null — викторина закрыта. */
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[] | null>(
+    null
+  )
 
   // Зона по умолчанию — первая, в которой есть РЭС (Борисоглебская),
   // иначе самая первая из списка зон.
@@ -73,11 +80,17 @@ function App() {
   /** Подстанции активной зоны. */
   const zonePs = psDb.filter((ps) => zoneResIds.has(ps.resId))
 
+  /** Название активной зоны — для шапки викторины. */
+  const activeZoneName =
+    zonesList.find((z) => z.id === activeZoneId)?.name ?? ''
+
   // При смене активной зоны (или после загрузки/сброса данных) —
-  // пересобираем игровое поле из ПС активной зоны.
+  // пересобираем игровое поле из ПС активной зоны. Викторина привязана
+  // к зоне, поэтому при её смене закрывается.
   useEffect(() => {
     setPsList({ all: zonePs })
     setErrorCount(null)
+    setQuizQuestions(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeZoneId, psDb, resList])
 
@@ -166,20 +179,17 @@ function App() {
   const getPsPosition = (id: number, containerId: string) =>
     psList[containerId].findIndex((ps) => ps.id === id)
 
-  /** Перемешивание по алгоритму Фишера–Йетса (без статистического смещения). */
-  const shuffleArraySimple = (array: Ps[]) => {
-    const result = array.slice()
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[result[i], result[j]] = [result[j], result[i]]
-    }
-    return result
-  }
-
+  /** Раскладывает ПС зоны в лоток «all» в случайном порядке. */
   const shufflePsSimple = (psDb: Ps[]) => {
     setPsList({
-      all: shuffleArraySimple(psDb),
+      all: shuffleArray(psDb),
     })
+  }
+
+  /** Открывает викторину: вопросы собираются по ПС активной зоны. */
+  const handleStartQuiz = () => {
+    if (!zonePs.length) return
+    setQuizQuestions(buildQuizQuestions(zonePs, resList))
   }
 
   /** Сбрасывает базу подстанций и таблицу РЭС к исходным данным. */
@@ -275,6 +285,8 @@ function App() {
         onEditPs={handleEditPs}
         onEditRes={() => setResEditor({ zoneId: null })}
         onResetDb={handleResetDb}
+        onStartQuiz={handleStartQuiz}
+        quizDisabled={!zonePs.length}
         errorCount={errorCount}
         onResetErrors={() => setErrorCount(0)}
       />
@@ -292,6 +304,14 @@ function App() {
           onShowHint={handleShowHint}
         />
       </DndContext>
+      {quizQuestions && (
+        <Quiz
+          zoneName={activeZoneName}
+          questions={quizQuestions}
+          resOptions={zoneRes}
+          onClose={() => setQuizQuestions(null)}
+        />
+      )}
       {editorZoneId !== null && (
         <PsEditor
           initialList={psDb}

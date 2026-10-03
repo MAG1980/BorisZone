@@ -3,6 +3,7 @@ import { EditMenu } from './EditMenu.tsx'
 import { ErrorCounter } from './ErrorCounter.tsx'
 import { useIsMobile } from '@/lib/useIsMobile'
 import { actionBtnClass } from '@/lib/uiClasses'
+import { cn } from '@/lib/utils'
 import type { ZoneList } from '@/data/types/zone'
 
 interface Props {
@@ -15,14 +16,19 @@ interface Props {
   onEditPs: (zoneId?: number) => void
   onEditRes: () => void
   onResetDb: () => void
+  /** Запускает викторину по РЭС активной зоны. */
+  onStartQuiz: () => void
+  /** В активной зоне нет подстанций — викторину запускать не из чего. */
+  quizDisabled: boolean
   errorCount: number | null
   onResetErrors: () => void
 }
 
 /**
- * Верхняя панель: выбор зоны, действия, меню редактирования, счётчик ошибок и подсказка.
- * На мобильных (<768px) остаётся только выбор зоны — действия, редактирование
- * и счётчик ошибок по-прежнему недоступны.
+ * Верхняя панель: выбор зоны, действия, викторина, меню редактирования,
+ * счётчик ошибок и подсказка.
+ * На мобильных (<768px) остаётся только выбор зоны — действия, викторина,
+ * редактирование и счётчик ошибок по-прежнему недоступны.
  */
 export const Toolbar = ({
   zonesList,
@@ -34,6 +40,8 @@ export const Toolbar = ({
   onEditPs,
   onEditRes,
   onResetDb,
+  onStartQuiz,
+  quizDisabled,
   errorCount,
   onResetErrors,
 }: Props) => {
@@ -56,7 +64,7 @@ export const Toolbar = ({
 
       {/* Десктоп (≥768px): полный тулбар. */}
       <div className="hidden shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-800/60 p-2 shadow-lg ring-1 ring-white/10 sm:gap-4 sm:p-3 md:flex">
-        <div className="flex justify-between items-center gap-3 flex-1">
+        <div className="flex flex-1 items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2 sm:w-auto">
             <ZoneSelect
               zonesList={zonesList}
@@ -73,6 +81,23 @@ export const Toolbar = ({
             </button>
             <button className={actionBtnClass} onClick={onFillAnswers}>
               Заполнить правильными ответами
+            </button>
+            {/* Викторина — отдельный режим: акцентный цвет, чтобы отличалась
+                от кнопок раскладки. В зоне без ПС спрашивать нечего. */}
+            <button
+              className={cn(
+                actionBtnClass,
+                'bg-violet-600 hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50'
+              )}
+              onClick={onStartQuiz}
+              disabled={quizDisabled}
+              title={
+                quizDisabled
+                  ? 'В активной зоне нет подстанций'
+                  : 'Викторина по районам активной зоны'
+              }
+            >
+              Викторина
             </button>
             {!isMobile && (
               <EditMenu
