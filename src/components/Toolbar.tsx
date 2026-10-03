@@ -56,8 +56,8 @@ export const Toolbar = ({
 
       {/* Десктоп (≥768px): полный тулбар. */}
       <div className="hidden shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-800/60 p-2 shadow-lg ring-1 ring-white/10 sm:gap-4 sm:p-3 md:flex">
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+        <div className="flex justify-between items-center gap-3 flex-1">
+          <div className="flex flex-wrap gap-2 sm:w-auto">
             <ZoneSelect
               zonesList={zonesList}
               activeZoneId={activeZoneId}
@@ -82,9 +82,11 @@ export const Toolbar = ({
               />
             )}
           </div>
-          {!!errorCount && (
-            <ErrorCounter errorCount={errorCount} onReset={onResetErrors} />
-          )}
+          <div>
+            {!!errorCount && (
+              <ErrorCounter errorCount={errorCount} onReset={onResetErrors} />
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -52,7 +52,7 @@ export const ResColumn = ({
       {!isMobile && (
         <Droppable
           id={String(res.id)}
-          className={'grow p-1 rounded-lg bg-white md:min-h-[70px]'}
+          className={'grow p-1 rounded-lg bg-white md:min-h-[78px]'}
         >
           <div className="flex flex-wrap justify-center gap-1 rounded-lg">
             {psList.map((ps) => (
